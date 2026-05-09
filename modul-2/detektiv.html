@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Compliance-Detektiv | Modul 2 – Rechtliche Grundlagen</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --dark: #0f172a; --card: #1e293b; --card2: #263348;
+            --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
+            --compliant: #2a9d8f;
+            --verstoss:  #d90429;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: var(--dark); color: var(--text); min-height: 100vh; }
+        .screen { display: none; min-height: 100vh; flex-direction: column;
+                  align-items: center; padding: 24px 16px; }
+        .screen.active { display: flex; }
+        h1 { font-size: 1.7rem; margin-bottom: 8px; }
+        p  { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+        .btn { padding: 12px 28px; border: none; border-radius: 10px; font-size: .95rem;
+               font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-primary { background: var(--compliant); color: white; }
+        .btn-primary:hover { background: #218a7e; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+
+        /* ── INTRO ── */
+        .intro-box { max-width: 560px; text-align: center; padding-top: 40px; }
+        .cols-preview { display: flex; gap: 16px; margin: 28px 0; }
+        .col-preview { flex: 1; border-radius: 12px; padding: 18px 16px; text-align: left; }
+        .col-preview-icon { font-size: 1.6rem; margin-bottom: 6px; }
+        .col-preview-name { font-size: 1rem; font-weight: 700; }
+        .col-preview-desc { font-size: .75rem; opacity: .85; margin-top: 4px; line-height: 1.4; }
+        .cp-compliant { background: rgba(42,157,143,.2); border: 1px solid var(--compliant); }
+        .cp-compliant .col-preview-name, .cp-compliant .col-preview-icon { color: #5eead4; }
+        .cp-verstoss  { background: rgba(217,4,41,.15);  border: 1px solid var(--verstoss); }
+        .cp-verstoss  .col-preview-name, .cp-verstoss  .col-preview-icon { color: #f87171; }
+
+        /* ── GAME ── */
+        .game-wrap { width: 100%; max-width: 900px; }
+        .game-header { display: flex; justify-content: space-between; align-items: center;
+                        margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+        .score-badge { background: var(--card); border: 1px solid var(--border);
+                        border-radius: 20px; padding: 6px 16px; font-size: .85rem;
+                        font-weight: 700; color: var(--compliant); }
+
+        .columns { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+        .col { border-radius: 14px; border: 2px dashed var(--border);
+               min-height: 140px; padding: 14px; transition: all .15s; cursor: pointer; }
+        .col:hover { border-style: solid; }
+        .col-header { margin-bottom: 10px; }
+        .col-icon { font-size: 1.4rem; }
+        .col-name { font-size: .9rem; font-weight: 700; margin-top: 4px; }
+        .col-hint { font-size: .7rem; color: var(--muted); margin-top: 2px; }
+        .col-compliant { border-color: var(--compliant); }
+        .col-compliant .col-name { color: #5eead4; }
+        .col-verstoss  { border-color: var(--verstoss); }
+        .col-verstoss  .col-name { color: #f87171; }
+        .col-cards { display: flex; flex-direction: column; gap: 6px; }
+
+        .pool-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em;
+                       color: var(--muted); margin-bottom: 10px; }
+        .scenario-pool { display: flex; flex-wrap: wrap; gap: 8px;
+                          padding: 12px; background: var(--card2); border-radius: 12px; min-height: 60px; }
+
+        .praxis-karte { background: var(--card); border: 2px solid var(--border);
+                         border-radius: 10px; padding: 10px 14px; font-size: .82rem;
+                         cursor: pointer; transition: all .15s; line-height: 1.4; user-select: none; }
+        .praxis-karte:hover { border-color: var(--muted); }
+        .praxis-karte.selected { border-color: white; box-shadow: 0 0 0 2px white;
+                                  background: rgba(255,255,255,.07); }
+        .praxis-karte.correct { border-color: var(--compliant); background: rgba(42,157,143,.12); cursor: default; }
+        .praxis-karte.wrong   { border-color: var(--verstoss);  background: rgba(217,4,41,.1);   cursor: default; }
+        .praxis-karte.in-col  { width: 100%; }
+        .karte-result { font-size: .72rem; margin-top: 4px; color: var(--muted); }
+        .karte-result.r-correct { color: var(--compliant); }
+        .karte-result.r-wrong   { color: #f87171; }
+
+        /* ── RESULT ── */
+        .result-box { max-width: 660px; width: 100%; padding-top: 40px; text-align: center; }
+        .big-score { font-size: 3.5rem; font-weight: 800; color: var(--compliant); margin: 12px 0; }
+        .explanations { text-align: left; margin-top: 24px; }
+        .exp-item { background: var(--card); border-radius: 10px; padding: 14px 16px;
+                     margin-bottom: 10px; border-left: 3px solid var(--border); }
+        .exp-item.correct { border-color: var(--compliant); }
+        .exp-item.wrong   { border-color: var(--verstoss); }
+        .exp-praxis   { font-size: .83rem; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+        .exp-meta     { font-size: .75rem; color: var(--muted); }
+        .exp-norm     { font-size: .72rem; color: var(--muted); margin-top: 4px;
+                         background: var(--card2); display: inline-block; padding: 3px 10px;
+                         border-radius: 6px; }
+        .exp-erklaerung { font-size: .8rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+        @media (max-width: 500px) {
+            .columns { grid-template-columns: 1fr; }
+            .cols-preview { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+    <div class="intro-box">
+        <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo"
+             style="height:36px; filter:brightness(0) invert(1); opacity:.8; margin-bottom:20px;">
+        <h1>Compliance-Detektiv</h1>
+        <p style="margin-top:6px;">Modul 2 – Rechtliche Grundlagen</p>
+        <p style="margin-top:14px;">
+            SmartHire ist in Betrieb. Du prüfst 10 Praktiken aus dem echten Betrieb –<br>
+            und entscheidest: <strong style="color:#5eead4;">Compliant</strong> oder <strong style="color:#f87171;">Verstoß</strong>?
+        </p>
+
+        <div class="cols-preview">
+            <div class="col-preview cp-compliant">
+                <div class="col-preview-icon">✅</div>
+                <div class="col-preview-name">Compliant</div>
+                <div class="col-preview-desc">Die Praxis entspricht den rechtlichen Anforderungen.</div>
+            </div>
+            <div class="col-preview cp-verstoss">
+                <div class="col-preview-icon">❌</div>
+                <div class="col-preview-name">Verstoß</div>
+                <div class="col-preview-desc">Die Praxis verletzt eine oder mehrere Rechtsnormen.</div>
+            </div>
+        </div>
+
+        <p>Klicke eine Praxis-Karte an, dann wähle dein Urteil.<br>
+           Du bekommst sofort Rückmeldung mit Norm-Referenz.</p>
+
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startGame()">Spiel starten ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+    <div class="game-wrap">
+        <div class="game-header">
+            <span style="font-size:.85rem; color:var(--muted);">Klicke eine Praxis-Karte an, dann wähle dein Urteil</span>
+            <span class="score-badge" id="score-badge">0 / 10</span>
+        </div>
+
+        <div class="columns">
+            <div class="col col-compliant" onclick="assignToCol('compliant')">
+                <div class="col-header">
+                    <div class="col-icon">✅</div>
+                    <div class="col-name">Compliant</div>
+                    <div class="col-hint">Rechtlich einwandfrei</div>
+                </div>
+                <div class="col-cards" id="cards-compliant"></div>
+            </div>
+            <div class="col col-verstoss" onclick="assignToCol('verstoss')">
+                <div class="col-header">
+                    <div class="col-icon">❌</div>
+                    <div class="col-name">Verstoß</div>
+                    <div class="col-hint">Rechtliche Pflicht verletzt</div>
+                </div>
+                <div class="col-cards" id="cards-verstoss"></div>
+            </div>
+        </div>
+
+        <div class="pool-label">SmartHire-Praktiken – klicke eine an, dann wähle dein Urteil</div>
+        <div class="scenario-pool" id="scenario-pool"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="result-btn" onclick="showResult()"
+                    style="display:none;">Ergebnis anzeigen ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+    <div class="result-box">
+        <p style="color:var(--compliant); font-size:.8rem; text-transform:uppercase; letter-spacing:.1em;">Abgeschlossen</p>
+        <div class="big-score" id="final-score">0 / 10</div>
+        <p id="final-sub" style="color:var(--muted);"></p>
+        <div class="explanations" id="explanations"></div>
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="restartGame()">Nochmal ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const PRAKTIKEN = [
+    {
+        id: 'p1',
+        text: 'In der Stellenanzeige wird darauf hingewiesen, dass KI bei der Vorauswahl eingesetzt wird.',
+        urteil: 'compliant',
+        norm: 'DSGVO Art. 13 Abs. 2 lit. f',
+        erklaerung: 'Betroffene müssen bei der Datenerhebung über automatisierte Entscheidungsfindung informiert werden. Dieser Hinweis in der Stellenanzeige erfüllt genau diese Pflicht.'
+    },
+    {
+        id: 'p2',
+        text: 'Bewerbungsunterlagen werden 10 Jahre ohne Rechtsgrundlage gespeichert.',
+        urteil: 'verstoss',
+        norm: 'DSGVO Art. 5 Abs. 1 lit. e',
+        erklaerung: 'Der Grundsatz der Speicherbegrenzung verlangt, dass Daten nur so lange gespeichert werden, wie es für den Zweck erforderlich ist. Ohne Rechtsgrundlage ist eine 10-jährige Speicherung ein klarer Verstoß – üblich sind 6 Monate nach Abschluss des Verfahrens.'
+    },
+    {
+        id: 'p3',
+        text: 'Das Modell wurde ausschließlich auf Lebensläufen westeuropäischer Bewerber trainiert – internationale Bewerber werden systematisch schlechter bewertet.',
+        urteil: 'verstoss',
+        norm: 'AGG § 1 · EU AI Act Art. 10',
+        erklaerung: 'Nicht repräsentative Trainingsdaten führen zu systematischer Benachteiligung – hier wegen ethnischer Herkunft (AGG § 1). Zudem schreibt der EU AI Act für Hochrisiko-KI vor, dass Trainingsdaten repräsentativ und frei von diskriminierenden Mustern sein müssen.'
+    },
+    {
+        id: 'p4',
+        text: 'Muster GmbH hat mit dem SmartHire-Anbieter einen Auftragsverarbeitungsvertrag (AVV) abgeschlossen.',
+        urteil: 'compliant',
+        norm: 'DSGVO Art. 28',
+        erklaerung: 'Wenn ein Dienstleister personenbezogene Daten im Auftrag verarbeitet, ist ein AVV verpflichtend. Muster GmbH handelt hier korrekt.'
+    },
+    {
+        id: 'p5',
+        text: 'Jede SmartHire-Empfehlung wird vor der finalen Einstellungsentscheidung von einer HR-Person geprüft und bestätigt.',
+        urteil: 'compliant',
+        norm: 'EU AI Act Art. 14 (menschliche Aufsicht)',
+        erklaerung: 'Bei Hochrisiko-KI ist menschliche Aufsicht über die Ausgaben des Systems verpflichtend. Die HR-Person kann die KI-Empfehlung überprüfen, korrigieren oder ablehnen – das ist genau das Ziel von Art. 14.'
+    },
+    {
+        id: 'p6',
+        text: 'Die Risikoklassifizierung von SmartHire wurde nie dokumentiert.',
+        urteil: 'verstoss',
+        norm: 'EU AI Act Art. 6 Abs. 4',
+        erklaerung: 'Anbieter von KI-Systemen nach Anhang III müssen die Einstufung als Hochrisiko-System dokumentieren. Fehlt diese Dokumentation, liegt ein Verstoß gegen die Transparenz- und Dokumentationspflichten des EU AI Act vor.'
+    },
+    {
+        id: 'p7',
+        text: 'Bewerbungsfotos werden zur biometrischen Analyse verwendet, ohne dass dies in der Datenschutzerklärung erwähnt wird.',
+        urteil: 'verstoss',
+        norm: 'DSGVO Art. 6 · Art. 13',
+        erklaerung: 'Die Verarbeitung von Fotos zur biometrischen Analyse erfordert eine Rechtsgrundlage (Art. 6) und eine Informationspflicht bei der Erhebung (Art. 13). Fehlt beides, liegt ein schwerwiegender Verstoß vor – biometrische Daten können zudem besondere Kategorien nach Art. 9 DSGVO darstellen.'
+    },
+    {
+        id: 'p8',
+        text: 'Bewerber können jederzeit Auskunft über ihre gespeicherten Daten beantragen und erhalten eine Antwort innerhalb von 30 Tagen.',
+        urteil: 'compliant',
+        norm: 'DSGVO Art. 15 i.V.m. Art. 12 Abs. 3',
+        erklaerung: 'Das Auskunftsrecht nach Art. 15 muss unverzüglich, spätestens aber innerhalb eines Monats (30 Tage) beantwortet werden. Muster GmbH erfüllt diese Frist und handelt compliant.'
+    },
+    {
+        id: 'p9',
+        text: 'Muster GmbH hat keine Datenschutz-Folgenabschätzung (DSFA) durchgeführt, obwohl SmartHire systematisch Bewerber bewertet.',
+        urteil: 'verstoss',
+        norm: 'DSGVO Art. 35',
+        erklaerung: 'Automatisierte Entscheidungen in der Personalauswahl stellen ein hohes Risiko für die Rechte und Freiheiten natürlicher Personen dar. Eine DSFA ist daher vor dem Einsatz verpflichtend – nicht optional.'
+    },
+    {
+        id: 'p10',
+        text: 'SmartHire-generierte Absagen werden ohne Kennzeichnung als eigene Texte der Muster GmbH veröffentlicht.',
+        urteil: 'verstoss',
+        norm: 'EU AI Act Art. 50 Abs. 4',
+        erklaerung: 'KI-generierte Inhalte müssen als solche kenntlich gemacht werden, sofern keine Ausnahme (z.B. redaktionelle Verantwortung durch einen Menschen) greift. Ohne Kennzeichnung liegt ein Verstoß gegen die Transparenzpflichten des EU AI Act vor.'
+    },
+];
+
+let selectedCard = null;
+let placed = {};
+let score  = 0;
+
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+    selectedCard = null;
+    placed = {};
+    score  = 0;
+    ['compliant','verstoss'].forEach(u => {
+        document.getElementById('cards-' + u).innerHTML = '';
+    });
+    const pool = document.getElementById('scenario-pool');
+    pool.innerHTML = '';
+    shuffle([...PRAKTIKEN]).forEach(p => {
+        const el = document.createElement('div');
+        el.className   = 'praxis-karte';
+        el.id          = 'k-' + p.id;
+        el.dataset.id  = p.id;
+        el.textContent = p.text;
+        el.onclick     = () => onCardClick(el);
+        pool.appendChild(el);
+    });
+    document.getElementById('score-badge').textContent     = '0 / ' + PRAKTIKEN.length;
+    document.getElementById('result-btn').style.display    = 'none';
+    show('screen-game');
+}
+
+function restartGame() { startGame(); }
+
+function onCardClick(el) {
+    if (el.classList.contains('correct') || el.classList.contains('wrong')) return;
+    if (selectedCard === el) { el.classList.remove('selected'); selectedCard = null; return; }
+    if (selectedCard) selectedCard.classList.remove('selected');
+    selectedCard = el;
+    el.classList.add('selected');
+}
+
+function assignToCol(urteil) {
+    if (!selectedCard) return;
+    const pId    = selectedCard.dataset.id;
+    const praxis = PRAKTIKEN.find(p => p.id === pId);
+    const correct = praxis.urteil === urteil;
+
+    selectedCard.classList.remove('selected');
+    selectedCard.classList.add('in-col', correct ? 'correct' : 'wrong');
+
+    const label = document.createElement('div');
+    label.className = 'karte-result ' + (correct ? 'r-correct' : 'r-wrong');
+    if (correct) {
+        label.textContent = urteil === 'compliant' ? '✓ Compliant' : '✗ Verstoß';
+        score++;
+    } else {
+        label.textContent = urteil === 'compliant'
+            ? '✗ Richtig: Verstoß'
+            : '✗ Richtig: Compliant';
+    }
+    selectedCard.appendChild(label);
+
+    document.getElementById('cards-' + urteil).appendChild(selectedCard);
+    placed[pId] = urteil;
+    selectedCard = null;
+
+    document.getElementById('score-badge').textContent = score + ' / ' + PRAKTIKEN.length;
+
+    if (Object.keys(placed).length === PRAKTIKEN.length) {
+        document.getElementById('result-btn').style.display = 'inline-block';
+    }
+}
+
+function showResult() {
+    const pct = Math.round((score / PRAKTIKEN.length) * 100);
+    document.getElementById('final-score').textContent = score + ' / ' + PRAKTIKEN.length;
+    document.getElementById('final-sub').textContent =
+        pct >= 80 ? '🌟 Ausgezeichnet!' : pct >= 60 ? '👍 Gut gemacht!' : '📚 Nochmal versuchen?';
+
+    document.getElementById('explanations').innerHTML = PRAKTIKEN.map(p => {
+        const playerUrteil = placed[p.id] || null;
+        const correct      = playerUrteil === p.urteil;
+        const urteilLabel  = u => u === 'compliant' ? '✅ Compliant' : '❌ Verstoß';
+        return `<div class="exp-item ${correct ? 'correct' : 'wrong'}">
+            <div class="exp-praxis">${p.text}</div>
+            <div class="exp-meta">
+                ${correct
+                    ? `✅ Richtig: ${urteilLabel(p.urteil)}`
+                    : `Du: ${playerUrteil ? urteilLabel(playerUrteil) : '–'}
+                       &nbsp;·&nbsp; Richtig: ${urteilLabel(p.urteil)}`}
+            </div>
+            <div class="exp-norm">${p.norm}</div>
+            <div class="exp-erklaerung">${p.erklaerung}</div>
+        </div>`;
+    }).join('');
+
+    show('screen-result');
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+</script>
+</body>
+</html>

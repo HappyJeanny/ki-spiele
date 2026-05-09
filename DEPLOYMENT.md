@@ -11,12 +11,14 @@
 ## Befehl (alles in einer Zeile)
 
 ```bash
-cd /home/imader/Dokumente/KI-Beauftragter && git add spiele/ && git commit -m "Spiele: kurze Beschreibung der Änderung" && git subtree push --prefix spiele https://HappyJeanny:TOKEN@github.com/HappyJeanny/ki-spiele.git main
+cd /home/imader/Dokumente/KI-Beauftragter && git add spiele/ && git commit -m "Spiele: kurze Beschreibung der Änderung" && git subtree split --prefix=spiele -b spiele-tmp && git push https://HappyJeanny:TOKEN@github.com/HappyJeanny/ki-spiele.git spiele-tmp:main --force && git branch -D spiele-tmp
 ```
 
 `TOKEN` ersetzen durch deinen Personal Access Token.
 
 Nach ca. 1–2 Minuten ist die Änderung live unter `https://spiele.ki-strategie.co`.
+
+> **Hinweis:** `--force` ist bei diesem Deployment-Ansatz immer nötig, weil `git subtree split` eine synthetische Commit-History erzeugt, die nicht mit der des Remote-Repos kompatibel ist.
 
 ---
 
@@ -53,6 +55,9 @@ Nach ca. 1–2 Minuten ist die Änderung live unter `https://spiele.ki-strategie
 
 **Authentifizierungsfehler**
 → Token abgelaufen oder falsch eingegeben → neuen Token erstellen (siehe oben)
+
+**„rejected – fetch first"** oder andere Push-Fehler
+→ Der Haupt-Deploy-Befehl (oben) enthält bereits `--force` und löst diesen Fall.
 
 **Änderung nicht sichtbar nach 5 Minuten**
 → Browser-Cache leeren (Strg + Shift + R)
