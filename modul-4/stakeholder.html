@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Stakeholder-Matrix | Modul 4 – KI-Beauftragter</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --blue: #005f73; --green: #2a9d8f; --bg: #f0f4f8;
+            --card: #fff; --text: #1a2535; --muted: #64748b;
+            --border: #e2e8f0; --correct: #2a9d8f; --wrong: #d90429;
+            --q1: #7c3aed; --q2: #0f766e; --q3: #b45309; --q4: #64748b;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        /* HEADER */
+        .game-header { background: var(--blue); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+        .game-header img { height: 30px; filter: brightness(0) invert(1); }
+        .game-header h1 { font-size: 1.1rem; }
+        .game-header .back-link { margin-left: auto; color: rgba(255,255,255,0.7); font-size: 0.82rem; text-decoration: none; }
+        .game-header .back-link:hover { color: white; }
+
+        /* INTRO */
+        #screen-intro { display: flex; flex-direction: column; align-items: center; padding: 32px 20px; }
+        .intro-card { background: var(--card); border-radius: 16px; padding: 32px 28px; max-width: 540px; width: 100%; border: 1px solid var(--border); }
+        .intro-card h2 { font-size: 1.3rem; color: var(--blue); margin-bottom: 12px; }
+        .intro-card p { font-size: 0.9rem; color: var(--muted); line-height: 1.7; margin-bottom: 16px; }
+        .quadrant-legend { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 20px 0; }
+        .legend-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 10px; }
+        .legend-dot { width: 14px; height: 14px; border-radius: 50%; flex-shrink: 0; margin-top: 2px; }
+        .legend-item p { font-size: 0.8rem; color: var(--text); line-height: 1.4; margin: 0; }
+        .legend-item strong { display: block; font-size: 0.82rem; }
+        .btn-start { display: block; width: 100%; padding: 14px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; margin-top: 8px; transition: background 0.2s; }
+        .btn-start:hover { background: #004d5e; }
+
+        /* GAME */
+        #screen-game { display: none; flex-direction: column; align-items: center; padding: 20px; }
+        .game-area { width: 100%; max-width: 880px; }
+        .progress-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .progress-text { font-size: 0.85rem; color: var(--muted); }
+        .score-badge { background: var(--blue); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+
+        /* CARDS DECK */
+        .deck-area { background: var(--card); border-radius: 14px; padding: 20px; border: 1px solid var(--border); margin-bottom: 20px; }
+        .deck-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+        .stakeholder-cards { display: flex; flex-wrap: wrap; gap: 10px; min-height: 60px; }
+        .sh-card { background: #f8fafc; border: 2px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 0.88rem; font-weight: 600; color: var(--text); cursor: pointer; transition: all 0.15s; user-select: none; }
+        .sh-card:hover { border-color: var(--blue); background: #e0f0f5; }
+        .sh-card.selected { border-color: var(--blue); background: rgba(0,95,115,0.12); color: var(--blue); box-shadow: 0 0 0 3px rgba(0,95,115,0.2); }
+        .sh-card.placed { opacity: 0.35; cursor: default; pointer-events: none; }
+
+        /* MATRIX */
+        .matrix-wrap { position: relative; }
+        .matrix-axis-y { position: absolute; left: -28px; top: 50%; transform: translateY(-50%) rotate(-90deg); font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; white-space: nowrap; }
+        .matrix-axis-x { text-align: center; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-top: 8px; }
+        .matrix-grid { display: grid; grid-template-columns: 80px 1fr 1fr; grid-template-rows: 1fr 1fr; gap: 2px; background: #cbd5e1; border-radius: 12px; overflow: hidden; }
+        .matrix-row-label { background: #f1f5f9; display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 700; color: var(--muted); padding: 8px; text-align: center; line-height: 1.3; }
+        .matrix-cell { background: white; min-height: 160px; padding: 14px; cursor: pointer; transition: background 0.15s; position: relative; }
+        .matrix-cell:hover { background: #f0f9ff; }
+        .matrix-cell.highlight { background: #e0f0f5; }
+        .cell-header { display: flex; align-items: center; gap: 6px; margin-bottom: 10px; }
+        .cell-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+        .cell-title { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; }
+        .cell-subtitle { font-size: 0.68rem; color: var(--muted); margin-top: 2px; }
+        .placed-cards { display: flex; flex-wrap: wrap; gap: 6px; }
+        .placed-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px; border-radius: 8px; font-size: 0.8rem; font-weight: 600; color: white; }
+        .placed-chip .remove-chip { cursor: pointer; opacity: 0.7; font-size: 0.9rem; line-height: 1; }
+        .placed-chip .remove-chip:hover { opacity: 1; }
+
+        /* Column headers */
+        .matrix-col-headers { display: grid; grid-template-columns: 80px 1fr 1fr; gap: 2px; margin-bottom: 2px; }
+        .col-header { text-align: center; font-size: 0.75rem; font-weight: 700; color: var(--muted); padding: 6px; text-transform: uppercase; letter-spacing: 0.06em; }
+
+        /* FEEDBACK */
+        .feedback-bar { background: var(--card); border-radius: 12px; padding: 14px 18px; margin-top: 16px; border: 1px solid var(--border); display: none; }
+        .feedback-bar.show { display: block; }
+        .fb-correct { border-left: 4px solid var(--correct); }
+        .fb-wrong { border-left: 4px solid var(--wrong); }
+        .fb-text { font-size: 0.88rem; line-height: 1.6; }
+        .fb-norm { display: inline-block; background: #f1f5f9; border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; color: var(--muted); margin-top: 6px; }
+
+        /* RESULT */
+        #screen-result { display: none; flex-direction: column; align-items: center; padding: 32px 20px; }
+        .result-card { background: var(--card); border-radius: 16px; padding: 32px 28px; max-width: 600px; width: 100%; border: 1px solid var(--border); text-align: center; }
+        .result-score { font-size: 3.5rem; font-weight: 800; color: var(--blue); margin: 16px 0 4px; }
+        .result-label { font-size: 1rem; color: var(--muted); margin-bottom: 24px; }
+        .result-summary { text-align: left; margin-top: 20px; }
+        .result-item { display: flex; align-items: flex-start; gap: 12px; padding: 12px; border-radius: 8px; margin-bottom: 8px; font-size: 0.85rem; line-height: 1.5; }
+        .result-item.ok  { background: rgba(42,157,143,0.08); border: 1px solid rgba(42,157,143,0.3); }
+        .result-item.err { background: rgba(217,4,41,0.06);   border: 1px solid rgba(217,4,41,0.2); }
+        .result-icon { font-size: 1.1rem; flex-shrink: 0; }
+        .btn-again { display: inline-block; margin-top: 20px; padding: 12px 28px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; transition: background 0.2s; }
+        .btn-again:hover { background: #004d5e; }
+        .btn-menu  { display: inline-block; margin-top: 20px; margin-left: 12px; padding: 12px 28px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; text-decoration: none; }
+    </style>
+</head>
+<body>
+
+<div class="game-header">
+    <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo">
+    <h1>Stakeholder-Matrix · Modul 4</h1>
+    <a href="../index.html" class="back-link">← Spielemenü</a>
+</div>
+
+<!-- INTRO -->
+<div id="screen-intro">
+    <div class="intro-card">
+        <h2>Stakeholder-Matrix</h2>
+        <p>Ordne die 8 SmartHire-Stakeholder in die richtige Zelle der 2×2-Matrix ein. Die Achsen sind <strong>Einfluss</strong> (Macht auf das Projekt) und <strong>Betroffenheit</strong> (direkte Auswirkung des KI-Systems).</p>
+        <div class="quadrant-legend">
+            <div class="legend-item" style="background:#f5f0ff;">
+                <div class="legend-dot" style="background:var(--q1);"></div>
+                <div><strong style="color:var(--q1);">Schlüsselakteure</strong><p>Hoch Einfluss, Hoch Betroffenheit → Eng einbinden</p></div>
+            </div>
+            <div class="legend-item" style="background:#f0faf9;">
+                <div class="legend-dot" style="background:var(--q2);"></div>
+                <div><strong style="color:var(--q2);">Unterstützer</strong><p>Hoch Einfluss, Niedrig Betroffenheit → Informieren & einbinden</p></div>
+            </div>
+            <div class="legend-item" style="background:#fffbeb;">
+                <div class="legend-dot" style="background:var(--q3);"></div>
+                <div><strong style="color:var(--q3);">Betroffene</strong><p>Niedrig Einfluss, Hoch Betroffenheit → Konsultieren & informieren</p></div>
+            </div>
+            <div class="legend-item" style="background:#f8fafc;">
+                <div class="legend-dot" style="background:var(--q4);"></div>
+                <div><strong style="color:var(--q4);">Randakteure</strong><p>Niedrig Einfluss, Niedrig Betroffenheit → Beobachten</p></div>
+            </div>
+        </div>
+        <p style="font-size:0.82rem;">Klicke zuerst auf einen Stakeholder, dann auf die Zielzelle in der Matrix.</p>
+        <button class="btn-start" onclick="startGame()">Spiel starten ▶</button>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game">
+    <div class="game-area">
+        <div class="progress-row">
+            <span class="progress-text" id="progress-text">0 von 8 platziert</span>
+            <span class="score-badge" id="score-badge">0 / 8 richtig</span>
+        </div>
+
+        <div class="deck-area">
+            <div class="deck-label">Stakeholder – wähle einen aus, dann klicke auf die Zielzelle</div>
+            <div class="stakeholder-cards" id="cards-deck"></div>
+        </div>
+
+        <div class="matrix-wrap" style="margin-left:36px;">
+            <div class="matrix-axis-y">Einfluss</div>
+            <div class="matrix-col-headers">
+                <div class="col-header"></div>
+                <div class="col-header">Niedrig Betroffenheit</div>
+                <div class="col-header">Hoch Betroffenheit</div>
+            </div>
+            <div class="matrix-grid" id="matrix-grid">
+                <!-- Row: Hoch Einfluss -->
+                <div class="matrix-row-label">Hoch<br>Einfluss</div>
+                <div class="matrix-cell" id="cell-q2" onclick="placeSelected('q2')">
+                    <div class="cell-header"><div class="cell-dot" style="background:var(--q2);"></div><div><div class="cell-title" style="color:var(--q2);">Unterstützer</div><div class="cell-subtitle">Informieren & einbinden</div></div></div>
+                    <div class="placed-cards" id="placed-q2"></div>
+                </div>
+                <div class="matrix-cell" id="cell-q1" onclick="placeSelected('q1')">
+                    <div class="cell-header"><div class="cell-dot" style="background:var(--q1);"></div><div><div class="cell-title" style="color:var(--q1);">Schlüsselakteure</div><div class="cell-subtitle">Eng einbinden</div></div></div>
+                    <div class="placed-cards" id="placed-q1"></div>
+                </div>
+                <!-- Row: Niedrig Einfluss -->
+                <div class="matrix-row-label">Niedrig<br>Einfluss</div>
+                <div class="matrix-cell" id="cell-q4" onclick="placeSelected('q4')">
+                    <div class="cell-header"><div class="cell-dot" style="background:var(--q4);"></div><div><div class="cell-title" style="color:var(--q4);">Randakteure</div><div class="cell-subtitle">Beobachten</div></div></div>
+                    <div class="placed-cards" id="placed-q4"></div>
+                </div>
+                <div class="matrix-cell" id="cell-q3" onclick="placeSelected('q3')">
+                    <div class="cell-header"><div class="cell-dot" style="background:var(--q3);"></div><div><div class="cell-title" style="color:var(--q3);">Betroffene</div><div class="cell-subtitle">Konsultieren & informieren</div></div></div>
+                    <div class="placed-cards" id="placed-q3"></div>
+                </div>
+            </div>
+            <div class="matrix-axis-x">Betroffenheit</div>
+        </div>
+
+        <div class="feedback-bar" id="feedback-bar">
+            <div class="fb-text" id="fb-text"></div>
+            <div class="fb-norm" id="fb-norm"></div>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result">
+    <div class="result-card">
+        <div style="font-size:2.5rem;">📊</div>
+        <div class="result-score" id="result-score">0/8</div>
+        <div class="result-label" id="result-label">Stakeholder richtig eingeordnet</div>
+        <div class="result-summary" id="result-summary"></div>
+        <div style="margin-top:8px;">
+            <button class="btn-again" onclick="restartGame()">Nochmal spielen</button>
+            <a href="../index.html" class="btn-menu">← Spielemenü</a>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const STAKEHOLDERS = [
+    {
+        id: 's1',
+        name: 'HR-Leiterin',
+        quadrant: 'q1',
+        erklaerung: 'Die HR-Leiterin trifft täglich Einstellungsentscheidungen auf Basis von SmartHire (hohe Betroffenheit) und hat als Abteilungsleitung direkten Einfluss auf den Projekterfolg. Sie gehört zu den Schlüsselakteuren – enge Einbindung von Anfang an.',
+        norm: 'PM-Standard · ISO 42001 Kl. 4.2 (interessierte Parteien)'
+    },
+    {
+        id: 's2',
+        name: 'Betriebsrat',
+        quadrant: 'q1',
+        erklaerung: 'Der Betriebsrat hat Mitbestimmungsrechte bei technischen Überwachungseinrichtungen (BetrVG § 87 Abs. 1 Nr. 6). Gleichzeitig sind die vertretenen Mitarbeitenden von den Personalentscheidungen des Systems betroffen. Schlüsselakteur mit hohem Einfluss und hoher Betroffenheit.',
+        norm: 'BetrVG § 87 Abs. 1 Nr. 6 · ISO 42001 Kl. 4.2'
+    },
+    {
+        id: 's3',
+        name: 'Geschäftsführung',
+        quadrant: 'q2',
+        erklaerung: 'Die Geschäftsführung entscheidet über Budget, strategische Ziele und die Genehmigung des Projekts (hoher Einfluss). Sie ist jedoch nicht operativ in den SmartHire-Prozess eingebunden (niedrige Betroffenheit). Unterstützer-Quadrant: regelmäßig informieren und für die Projektziele gewinnen.',
+        norm: 'EU AI Act Art. 17 (QMS-Verantwortung des Anbieters)'
+    },
+    {
+        id: 's4',
+        name: 'Datenschutzbeauftragter',
+        quadrant: 'q2',
+        erklaerung: 'Der DSB hat hohen Einfluss, da er das System genehmigen und Verarbeitungstätigkeiten beanstanden kann. Er ist jedoch nicht persönlich von den Bewerbungsentscheidungen betroffen. Unterstützer: frühzeitig einbinden, regelmäßig informieren.',
+        norm: 'DSGVO Art. 37–39 (Aufgaben des DSB) · EU AI Act Art. 9'
+    },
+    {
+        id: 's5',
+        name: 'Bewerber:innen',
+        quadrant: 'q3',
+        erklaerung: 'Bewerber:innen sind am stärksten von SmartHire betroffen – das System entscheidet über ihre Chancen (hohe Betroffenheit). Sie haben jedoch keinen Einfluss auf die Systementscheidungen (niedrig). Betroffene: konsultieren (z.B. über Beschwerdemöglichkeiten) und transparent informieren (DSGVO Art. 13/14).',
+        norm: 'DSGVO Art. 13/14 (Informationspflichten) · EU AI Act Art. 86'
+    },
+    {
+        id: 's6',
+        name: 'IT-Administration',
+        quadrant: 'q3',
+        erklaerung: 'Die IT-Administration betreibt und wartet SmartHire täglich (hohe Betroffenheit durch direkten operativen Bezug), hat aber keinen Einfluss auf Projektziele oder strategische Entscheidungen. Betroffene: in Testphasen einbeziehen und über Anforderungen informieren.',
+        norm: 'EU AI Act Art. 17 (QMS) · DSGVO Art. 32 (TOMs)'
+    },
+    {
+        id: 's7',
+        name: 'Marketing-Abteilung',
+        quadrant: 'q4',
+        erklaerung: 'Die Marketing-Abteilung ist weder direkt am SmartHire-Prozess beteiligt noch von dessen Ergebnissen betroffen. Mögliche Relevanz: Employer Branding. Randakteur: beobachten, bei Bedarf informieren.',
+        norm: 'PM-Standard – Stakeholder-Analyse'
+    },
+    {
+        id: 's8',
+        name: 'Externe Rechtsabteilung',
+        quadrant: 'q4',
+        erklaerung: 'Externe Anwält:innen werden bei konkreten Rechtsfragen hinzugezogen, sind aber nicht dauerhaft in das Projekt involviert. Weder hohes Einfluss-Potenzial noch direkte Betroffenheit im laufenden Betrieb. Randakteur: bei Bedarf konsultieren.',
+        norm: 'PM-Standard – Stakeholder-Analyse'
+    }
+];
+
+const QUADRANT_COLORS = { q1: '#7c3aed', q2: '#0f766e', q3: '#b45309', q4: '#64748b' };
+
+let selectedCard = null;
+let placements = {}; // id → {cell, correct}
+let score = 0;
+
+function startGame() {
+    document.getElementById('screen-intro').style.display = 'none';
+    document.getElementById('screen-game').style.display = 'flex';
+    renderDeck();
+}
+
+function renderDeck() {
+    const deck = document.getElementById('cards-deck');
+    deck.innerHTML = STAKEHOLDERS.map(sh => {
+        const placed = placements[sh.id];
+        return `<div class="sh-card${placed ? ' placed' : ''}" id="card-${sh.id}" onclick="selectCard('${sh.id}')">${sh.name}</div>`;
+    }).join('');
+}
+
+function selectCard(id) {
+    if (placements[id]) return;
+    if (selectedCard === id) { selectedCard = null; document.querySelectorAll('.sh-card').forEach(c => c.classList.remove('selected')); return; }
+    selectedCard = id;
+    document.querySelectorAll('.sh-card').forEach(c => c.classList.remove('selected'));
+    const el = document.getElementById('card-'+id);
+    if (el) el.classList.add('selected');
+    document.querySelectorAll('.matrix-cell').forEach(c => c.classList.add('highlight'));
+}
+
+function placeSelected(cell) {
+    if (!selectedCard) return;
+    const sh = STAKEHOLDERS.find(s => s.id === selectedCard);
+    if (!sh) return;
+    const correct = sh.quadrant === cell;
+    placements[sh.id] = { cell, correct };
+    if (correct) score++;
+    updateProgress();
+    renderDeck();
+    renderPlaced();
+    showFeedback(sh, correct, cell);
+    document.querySelectorAll('.matrix-cell').forEach(c => c.classList.remove('highlight'));
+    selectedCard = null;
+    if (Object.keys(placements).length === STAKEHOLDERS.length) {
+        setTimeout(showResult, 1200);
+    }
+}
+
+function renderPlaced() {
+    ['q1','q2','q3','q4'].forEach(q => {
+        const container = document.getElementById('placed-'+q);
+        const chips = STAKEHOLDERS
+            .filter(sh => placements[sh.id] && placements[sh.id].cell === q)
+            .map(sh => {
+                const ok = placements[sh.id].correct;
+                const color = ok ? QUADRANT_COLORS[q] : '#d90429';
+                return `<span class="placed-chip" style="background:${color};">${sh.name}<span class="remove-chip" onclick="removeChip('${sh.id}')">×</span></span>`;
+            }).join('');
+        container.innerHTML = chips;
+    });
+}
+
+function removeChip(id) {
+    const prev = placements[id];
+    if (!prev) return;
+    if (prev.correct) score = Math.max(0, score - 1);
+    delete placements[id];
+    updateProgress();
+    renderDeck();
+    renderPlaced();
+    hideFeedback();
+}
+
+function showFeedback(sh, correct, chosenCell) {
+    const bar = document.getElementById('feedback-bar');
+    const txt = document.getElementById('fb-text');
+    const norm = document.getElementById('fb-norm');
+    bar.className = 'feedback-bar show ' + (correct ? 'fb-correct' : 'fb-wrong');
+    const icon = correct ? '✅' : '❌';
+    const correctQ = { q1:'Schlüsselakteure', q2:'Unterstützer', q3:'Betroffene', q4:'Randakteure' };
+    txt.innerHTML = `<strong>${icon} ${sh.name}</strong>: ${sh.erklaerung}${!correct ? ` <em>(Richtig wäre: <strong>${correctQ[sh.quadrant]}</strong>)</em>` : ''}`;
+    norm.textContent = sh.norm;
+}
+
+function hideFeedback() {
+    document.getElementById('feedback-bar').classList.remove('show');
+}
+
+function updateProgress() {
+    const placed = Object.keys(placements).length;
+    document.getElementById('progress-text').textContent = `${placed} von ${STAKEHOLDERS.length} platziert`;
+    document.getElementById('score-badge').textContent = `${score} / ${STAKEHOLDERS.length} richtig`;
+}
+
+function showResult() {
+    document.getElementById('screen-game').style.display = 'none';
+    document.getElementById('screen-result').style.display = 'flex';
+    document.getElementById('result-score').textContent = `${score}/${STAKEHOLDERS.length}`;
+    const pct = Math.round(score / STAKEHOLDERS.length * 100);
+    document.getElementById('result-label').textContent = `${pct}% – Stakeholder richtig eingeordnet`;
+    const summary = STAKEHOLDERS.map(sh => {
+        const pl = placements[sh.id];
+        const ok = pl && pl.correct;
+        const correctQ = { q1:'Schlüsselakteure', q2:'Unterstützer', q3:'Betroffene', q4:'Randakteure' };
+        return `<div class="result-item ${ok?'ok':'err'}"><div class="result-icon">${ok?'✅':'❌'}</div><div><strong>${sh.name}</strong> → ${correctQ[sh.quadrant]}${!ok && pl ? ` (du: ${correctQ[pl.cell]||'?'})` : ''}</div></div>`;
+    }).join('');
+    document.getElementById('result-summary').innerHTML = summary;
+}
+
+function restartGame() {
+    selectedCard = null; placements = {}; score = 0;
+    ['q1','q2','q3','q4'].forEach(q => document.getElementById('placed-'+q).innerHTML = '');
+    hideFeedback(); updateProgress();
+    document.getElementById('screen-result').style.display = 'none';
+    document.getElementById('screen-game').style.display = 'flex';
+    renderDeck();
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QS-Phasen-Sortierer | Modul 4 – KI-Beauftragter</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --blue: #005f73; --green: #2a9d8f; --purple: #7c3aed;
+            --bg: #f0f4f8; --card: #ffffff; --text: #1a2535; --muted: #64748b;
+            --border: #e2e8f0; --correct: #2a9d8f; --wrong: #d90429;
+            --col1: #005f73; --col2: #7c3aed; --col3: #0f766e;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+        .game-header { background: var(--blue); color: white; padding: 16px 20px; display: flex; align-items: center; gap: 12px; }
+        .game-header img { height: 30px; filter: brightness(0) invert(1); }
+        .game-header h1 { font-size: 1.1rem; }
+        .back-link { margin-left: auto; color: rgba(255,255,255,0.7); font-size: 0.82rem; text-decoration: none; }
+        .back-link:hover { color: white; }
+
+        .game-wrap { max-width: 1000px; margin: 0 auto; padding: 24px 16px; }
+
+        /* STATUS BAR */
+        .status-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .status-bar p { font-size: 0.85rem; color: var(--muted); }
+        .score-chip { background: var(--blue); color: white; padding: 4px 14px; border-radius: 20px; font-size: 0.82rem; font-weight: 700; }
+
+        /* CARDS POOL */
+        .pool-area { background: var(--card); border-radius: 14px; padding: 20px; border: 1px solid var(--border); margin-bottom: 24px; }
+        .pool-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); font-weight: 600; margin-bottom: 12px; }
+        .pool-cards { display: flex; flex-wrap: wrap; gap: 10px; min-height: 52px; }
+
+        .activity-card { background: #f8fafc; border: 2px solid var(--border); border-radius: 10px; padding: 10px 16px; font-size: 0.86rem; line-height: 1.4; color: var(--text); cursor: pointer; transition: all 0.15s; max-width: 260px; }
+        .activity-card:hover { border-color: var(--blue); background: #e9f2f5; }
+        .activity-card.selected { border-color: var(--blue); background: rgba(0,95,115,0.1); box-shadow: 0 0 0 3px rgba(0,95,115,0.2); }
+        .activity-card.placed { opacity: 0.3; pointer-events: none; }
+
+        /* COLUMNS */
+        .columns-wrap { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+        @media (max-width: 640px) { .columns-wrap { grid-template-columns: 1fr; } }
+
+        .sort-col { border-radius: 14px; overflow: hidden; border: 2px solid transparent; transition: border-color 0.15s; }
+        .sort-col.highlight { border-color: rgba(0,95,115,0.4); }
+
+        .col-header { padding: 14px 16px; color: white; }
+        .col-icon { font-size: 1.6rem; margin-bottom: 6px; }
+        .col-title { font-size: 0.95rem; font-weight: 700; }
+        .col-sub { font-size: 0.75rem; opacity: 0.85; margin-top: 2px; }
+
+        .col-body { background: var(--card); min-height: 200px; padding: 14px; cursor: pointer; }
+        .col-body:hover .drop-hint { opacity: 1; }
+        .drop-hint { font-size: 0.8rem; color: var(--muted); text-align: center; padding: 10px 0; opacity: 0.5; transition: opacity 0.2s; }
+
+        .placed-item { border-radius: 8px; padding: 10px 12px; margin-bottom: 8px; font-size: 0.84rem; line-height: 1.4; color: white; display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+        .placed-item .remove-btn { cursor: pointer; opacity: 0.7; font-size: 0.9rem; flex-shrink: 0; }
+        .placed-item .remove-btn:hover { opacity: 1; }
+        .placed-item.wrong-place { background: var(--wrong) !important; }
+
+        /* FEEDBACK */
+        .feedback-box { margin-top: 20px; background: var(--card); border-radius: 12px; padding: 16px 18px; border: 1px solid var(--border); display: none; }
+        .feedback-box.show { display: block; }
+        .feedback-box.ok  { border-left: 4px solid var(--correct); }
+        .feedback-box.err { border-left: 4px solid var(--wrong); }
+        .fb-text { font-size: 0.88rem; line-height: 1.6; }
+        .fb-norm { display: inline-block; margin-top: 6px; background: #f1f5f9; border-radius: 6px; padding: 3px 10px; font-size: 0.75rem; color: var(--muted); }
+
+        /* RESULT */
+        #screen-result { display: none; max-width: 600px; margin: 32px auto; padding: 0 16px; }
+        .result-card { background: var(--card); border-radius: 16px; padding: 32px 28px; border: 1px solid var(--border); text-align: center; }
+        .result-score { font-size: 3.5rem; font-weight: 800; color: var(--blue); margin: 12px 0 4px; }
+        .result-items { text-align: left; margin-top: 20px; }
+        .res-row { display: flex; align-items: flex-start; gap: 10px; padding: 10px 12px; border-radius: 8px; margin-bottom: 6px; font-size: 0.85rem; line-height: 1.4; }
+        .res-row.ok  { background: rgba(42,157,143,0.08); }
+        .res-row.err { background: rgba(217,4,41,0.06); }
+        .btn-again { padding: 12px 28px; background: var(--blue); color: white; border: none; border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 20px; transition: background 0.2s; }
+        .btn-again:hover { background: #004d5e; }
+        .btn-menu { padding: 12px 28px; background: transparent; color: var(--muted); border: 1px solid var(--border); border-radius: 10px; font-size: 0.95rem; font-weight: 600; cursor: pointer; margin-top: 20px; margin-left: 12px; text-decoration: none; display: inline-block; }
+    </style>
+</head>
+<body>
+
+<div class="game-header">
+    <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo">
+    <h1>QS-Phasen-Sortierer · Modul 4</h1>
+    <a href="../index.html" class="back-link">← Spielemenü</a>
+</div>
+
+<div id="screen-game" class="game-wrap">
+    <div class="status-bar">
+        <p id="status-text">Wähle eine Aktivität, dann klicke auf die richtige Phase</p>
+        <span class="score-chip" id="score-chip">0 / 6 richtig</span>
+    </div>
+
+    <div class="pool-area">
+        <div class="pool-label">Aktivitäten – wähle eine aus, dann klicke auf die Ziel-Phase</div>
+        <div class="pool-cards" id="pool-cards"></div>
+    </div>
+
+    <div class="columns-wrap">
+        <div class="sort-col" id="col-planung">
+            <div class="col-header" style="background: var(--col1);">
+                <div class="col-icon">📐</div>
+                <div class="col-title">Planung</div>
+                <div class="col-sub">Vor Projektstart</div>
+            </div>
+            <div class="col-body" onclick="placeSelected('planung')">
+                <div class="drop-hint" id="hint-planung">Hier ablegen</div>
+                <div id="placed-planung"></div>
+            </div>
+        </div>
+        <div class="sort-col" id="col-testphase">
+            <div class="col-header" style="background: var(--col2);">
+                <div class="col-icon">🧪</div>
+                <div class="col-title">Testphase</div>
+                <div class="col-sub">Während der Erprobung</div>
+            </div>
+            <div class="col-body" onclick="placeSelected('testphase')">
+                <div class="drop-hint" id="hint-testphase">Hier ablegen</div>
+                <div id="placed-testphase"></div>
+            </div>
+        </div>
+        <div class="sort-col" id="col-abnahme">
+            <div class="col-header" style="background: var(--col3);">
+                <div class="col-icon">✅</div>
+                <div class="col-title">Abnahme</div>
+                <div class="col-sub">Bei Projektabschluss</div>
+            </div>
+            <div class="col-body" onclick="placeSelected('abnahme')">
+                <div class="drop-hint" id="hint-abnahme">Hier ablegen</div>
+                <div id="placed-abnahme"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="feedback-box" id="feedback-box">
+        <div class="fb-text" id="fb-text"></div>
+        <div class="fb-norm" id="fb-norm"></div>
+    </div>
+</div>
+
+<div id="screen-result">
+    <div class="result-card">
+        <div style="font-size:2.5rem;">🏆</div>
+        <div class="result-score" id="result-score">0/6</div>
+        <div style="color:var(--muted); font-size:0.95rem; margin-bottom:8px;" id="result-label">Aktivitäten richtig eingeordnet</div>
+        <div class="result-items" id="result-items"></div>
+        <div>
+            <button class="btn-again" onclick="restartGame()">Nochmal spielen</button>
+            <a href="../index.html" class="btn-menu">← Spielemenü</a>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const AKTIVITAETEN = [
+    {
+        id: 'a1',
+        text: 'SMART-Abnahmekriterien für SmartHire definieren (z.B. Precision ≥ 85 %, Gender-Bias < 5 % innerhalb von 3 Monaten)',
+        phase: 'planung',
+        erklaerung: 'Abnahmekriterien müssen SMART – spezifisch, messbar, erreichbar, relevant und zeitlich befristet – bereits in der Planungsphase festgelegt werden. Nur so können sie in der Testphase überprüft werden.',
+        norm: 'EU AI Act Art. 9 (Testanforderungen) · PM Best Practice'
+    },
+    {
+        id: 'a2',
+        text: 'Risikomanagement-Plan für SmartHire aufstellen und Maßnahmen zur Risikobehandlung dokumentieren',
+        phase: 'planung',
+        erklaerung: 'Das Risikomanagementsystem nach EU AI Act Art. 9 und ISO 42001 Kl. 6.1.2 muss als kontinuierlicher iterativer Prozess geplant werden – der Plan gehört in die Planungsphase, bevor Entwicklung und Test beginnen.',
+        norm: 'EU AI Act Art. 9 · ISO 42001 Kl. 6.1.2'
+    },
+    {
+        id: 'a3',
+        text: 'HR-Team als Endanwender:innen in die Testphase einbeziehen und Feedback zur Bedienbarkeit einsammeln',
+        phase: 'testphase',
+        erklaerung: 'Der Qualitätssicherungsprozess fordert explizit, Endanwender:innen in die Testphase einzubeziehen. Synthetische Tests ohne realen Nutzungskontext sind laut QS-Standard unzureichend.',
+        norm: 'ISO 42001 Kl. 9.1 · EU AI Act Art. 17 (QMS)'
+    },
+    {
+        id: 'a4',
+        text: 'Ursachenanalyse bei festgestelltem Gender-Bias durchführen und Nachtraining mit verbesserten Daten initiieren',
+        phase: 'testphase',
+        erklaerung: 'Bei Abweichungen der KI-Ergebnisse schreibt ISO 42001 Kl. 10.2 eine Ursachenanalyse (Root Cause Analysis) und Korrekturmaßnahmen vor. Das Nachtraining mit verbesserten Daten ist eine typische Maßnahme in der Testphase.',
+        norm: 'ISO 42001 Kl. 10.2 (Nichtkonformitäten) · EU AI Act Art. 9'
+    },
+    {
+        id: 'a5',
+        text: 'Technische Dokumentation nach EU AI Act Art. 11 i.V.m. Anhang IV fertigstellen und vor Go-Live bereitstellen',
+        phase: 'abnahme',
+        erklaerung: 'EU AI Act Art. 11 schreibt vor, dass die technische Dokumentation vor dem Inverkehrbringen oder der Inbetriebnahme vorliegt. Sie ist Teil des Abnahmeprozesses und muss auf aktuellem Stand gehalten werden.',
+        norm: 'EU AI Act Art. 11 i.V.m. Anhang IV'
+    },
+    {
+        id: 'a6',
+        text: 'Testergebnisse in einem nachvollziehbaren Abnahmeprotokoll dokumentieren und Ergebnisse ins Projektcontrolling einfließen lassen',
+        phase: 'abnahme',
+        erklaerung: 'Die Abnahme erfordert eine nachvollziehbare Dokumentation der Testergebnisse. Laut EU AI Act Art. 17 (QMS) müssen Abnahmeergebnisse dokumentiert und im Projektcontrolling berücksichtigt werden.',
+        norm: 'EU AI Act Art. 17 (QMS) · PM Best Practice'
+    }
+];
+
+const COL_COLORS = { planung: '#005f73', testphase: '#7c3aed', abnahme: '#0f766e' };
+const COL_NAMES  = { planung: 'Planung', testphase: 'Testphase', abnahme: 'Abnahme' };
+
+let selected = null;
+let placements = {};
+let score = 0;
+
+function init() {
+    renderPool();
+}
+
+function renderPool() {
+    const pool = document.getElementById('pool-cards');
+    pool.innerHTML = AKTIVITAETEN.map(a => {
+        const placed = placements[a.id];
+        return `<div class="activity-card${placed ? ' placed' : ''}" id="card-${a.id}" onclick="selectCard('${a.id}')">${a.text}</div>`;
+    }).join('');
+}
+
+function selectCard(id) {
+    if (placements[id]) return;
+    if (selected === id) {
+        selected = null;
+        document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+        document.querySelectorAll('.sort-col').forEach(c => c.classList.remove('highlight'));
+        return;
+    }
+    selected = id;
+    document.querySelectorAll('.activity-card').forEach(c => c.classList.remove('selected'));
+    const el = document.getElementById('card-'+id);
+    if (el) el.classList.add('selected');
+    document.querySelectorAll('.sort-col').forEach(c => c.classList.add('highlight'));
+}
+
+function placeSelected(phase) {
+    if (!selected) return;
+    const a = AKTIVITAETEN.find(x => x.id === selected);
+    if (!a) return;
+    const correct = a.phase === phase;
+    placements[a.id] = { phase, correct };
+    if (correct) score++;
+    selected = null;
+    document.querySelectorAll('.sort-col').forEach(c => c.classList.remove('highlight'));
+    renderPool();
+    renderColumns();
+    showFeedback(a, correct, phase);
+    updateScore();
+    if (Object.keys(placements).length === AKTIVITAETEN.length) {
+        setTimeout(showResult, 1400);
+    }
+}
+
+function renderColumns() {
+    ['planung','testphase','abnahme'].forEach(phase => {
+        const container = document.getElementById('placed-'+phase);
+        const hint = document.getElementById('hint-'+phase);
+        const items = AKTIVITAETEN.filter(a => placements[a.id] && placements[a.id].phase === phase);
+        hint.style.display = items.length ? 'none' : 'block';
+        container.innerHTML = items.map(a => {
+            const ok = placements[a.id].correct;
+            const bg = ok ? COL_COLORS[phase] : '#d90429';
+            return `<div class="placed-item" style="background:${bg};"><span>${a.text}</span><span class="remove-btn" onclick="removeItem('${a.id}')">×</span></div>`;
+        }).join('');
+    });
+}
+
+function removeItem(id) {
+    const prev = placements[id];
+    if (!prev) return;
+    if (prev.correct) score = Math.max(0, score - 1);
+    delete placements[id];
+    renderPool();
+    renderColumns();
+    hideFeedback();
+    updateScore();
+}
+
+function showFeedback(a, correct, chosenPhase) {
+    const box = document.getElementById('feedback-box');
+    const txt = document.getElementById('fb-text');
+    const norm = document.getElementById('fb-norm');
+    box.className = 'feedback-box show ' + (correct ? 'ok' : 'err');
+    const icon = correct ? '✅' : '❌';
+    const wrongMsg = !correct ? ` (Richtig wäre: <strong>${COL_NAMES[a.phase]}</strong>)` : '';
+    txt.innerHTML = `<strong>${icon}</strong> ${a.erklaerung}${wrongMsg}`;
+    norm.textContent = a.norm;
+}
+
+function hideFeedback() {
+    document.getElementById('feedback-box').classList.remove('show');
+}
+
+function updateScore() {
+    const placed = Object.keys(placements).length;
+    document.getElementById('status-text').textContent = `${placed} von ${AKTIVITAETEN.length} platziert`;
+    document.getElementById('score-chip').textContent = `${score} / ${AKTIVITAETEN.length} richtig`;
+}
+
+function showResult() {
+    document.getElementById('screen-game').style.display = 'none';
+    document.getElementById('screen-result').style.display = 'block';
+    document.getElementById('result-score').textContent = `${score}/${AKTIVITAETEN.length}`;
+    const pct = Math.round(score / AKTIVITAETEN.length * 100);
+    document.getElementById('result-label').textContent = `${pct}% – Aktivitäten richtig eingeordnet`;
+    const items = AKTIVITAETEN.map(a => {
+        const pl = placements[a.id];
+        const ok = pl && pl.correct;
+        const wrongNote = (!ok && pl) ? ` (du: ${COL_NAMES[pl.phase] || '?'})` : '';
+        return `<div class="res-row ${ok?'ok':'err'}"><span>${ok?'✅':'❌'}</span><span><strong>${COL_NAMES[a.phase]}</strong>${wrongNote}: ${a.text}</span></div>`;
+    }).join('');
+    document.getElementById('result-items').innerHTML = items;
+}
+
+function restartGame() {
+    selected = null; placements = {}; score = 0;
+    ['planung','testphase','abnahme'].forEach(phase => {
+        document.getElementById('placed-'+phase).innerHTML = '';
+        document.getElementById('hint-'+phase).style.display = 'block';
+    });
+    hideFeedback(); updateScore();
+    document.getElementById('screen-result').style.display = 'none';
+    document.getElementById('screen-game').style.display = 'block';
+    renderPool();
+}
+
+init();
+</script>
+</body>
+</html>
