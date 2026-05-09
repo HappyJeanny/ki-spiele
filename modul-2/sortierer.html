@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gesetz-Sortierer | Modul 2 – Rechtliche Grundlagen</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --dark: #0f172a; --card: #1e293b; --card2: #263348;
+            --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
+            --dsgvo:  #005f73;
+            --euai:   #7c3aed;
+            --urhg:   #b45309;
+            --agg:    #0f766e;
+            --correct: #2a9d8f; --wrong: #d90429;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: var(--dark); color: var(--text); min-height: 100vh; }
+        .screen { display: none; min-height: 100vh; flex-direction: column;
+                  align-items: center; padding: 24px 16px; }
+        .screen.active { display: flex; }
+        h1 { font-size: 1.7rem; margin-bottom: 8px; }
+        p  { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+        .btn { padding: 12px 28px; border: none; border-radius: 10px; font-size: .95rem;
+               font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-primary { background: var(--dsgvo); color: white; }
+        .btn-primary:hover { background: #004d5e; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+
+        /* ── INTRO ── */
+        .intro-box { max-width: 580px; text-align: center; padding-top: 40px; }
+        .gesetze-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+                         margin: 24px 0; text-align: left; }
+        .gesetz-chip { border-radius: 10px; padding: 12px 14px; }
+        .gc-icon { font-size: 1.3rem; margin-bottom: 4px; }
+        .gc-name { font-size: .9rem; font-weight: 700; }
+        .gc-desc { font-size: .75rem; opacity: .85; margin-top: 2px; }
+        .chip-dsgvo { background: rgba(0,95,115,.25); border: 1px solid var(--dsgvo); }
+        .chip-dsgvo .gc-name, .chip-dsgvo .gc-desc, .chip-dsgvo .gc-icon { color: #5ecbe8; }
+        .chip-euai  { background: rgba(124,58,237,.2);  border: 1px solid var(--euai); }
+        .chip-euai  .gc-name, .chip-euai  .gc-desc, .chip-euai  .gc-icon { color: #c4b5fd; }
+        .chip-urhg  { background: rgba(180,83,9,.2);    border: 1px solid var(--urhg); }
+        .chip-urhg  .gc-name, .chip-urhg  .gc-desc, .chip-urhg  .gc-icon { color: #fbbf24; }
+        .chip-agg   { background: rgba(15,118,110,.2);  border: 1px solid var(--agg); }
+        .chip-agg   .gc-name, .chip-agg   .gc-desc, .chip-agg   .gc-icon { color: #5eead4; }
+
+        /* ── GAME ── */
+        .game-wrap { width: 100%; max-width: 900px; }
+        .game-header { display: flex; justify-content: space-between; align-items: center;
+                        margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+        .score-badge { background: var(--card); border: 1px solid var(--border);
+                        border-radius: 20px; padding: 6px 16px; font-size: .85rem;
+                        font-weight: 700; color: var(--correct); }
+
+        .columns { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 24px; }
+        .col { border-radius: 12px; border: 2px dashed var(--border);
+               min-height: 120px; padding: 10px; transition: all .15s; cursor: pointer; }
+        .col:hover { border-style: solid; }
+        .col-header { margin-bottom: 8px; }
+        .col-icon { font-size: 1.2rem; }
+        .col-name { font-size: .78rem; font-weight: 700; margin-top: 2px; }
+        .col-hint { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+        .col-dsgvo { border-color: var(--dsgvo); }
+        .col-dsgvo .col-name { color: #5ecbe8; }
+        .col-euai  { border-color: var(--euai); }
+        .col-euai  .col-name { color: #c4b5fd; }
+        .col-urhg  { border-color: var(--urhg); }
+        .col-urhg  .col-name { color: #fbbf24; }
+        .col-agg   { border-color: var(--agg); }
+        .col-agg   .col-name { color: #5eead4; }
+        .col-cards { display: flex; flex-direction: column; gap: 6px; }
+
+        .pool-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em;
+                       color: var(--muted); margin-bottom: 10px; }
+        .scenario-pool { display: flex; flex-wrap: wrap; gap: 8px;
+                          padding: 12px; background: var(--card2); border-radius: 12px; min-height: 60px; }
+
+        .szenario-karte { background: var(--card); border: 2px solid var(--border);
+                            border-radius: 10px; padding: 10px 14px; font-size: .82rem;
+                            cursor: pointer; transition: all .15s; line-height: 1.4; user-select: none; }
+        .szenario-karte:hover { border-color: var(--muted); }
+        .szenario-karte.selected { border-color: white; box-shadow: 0 0 0 2px white;
+                                    background: rgba(255,255,255,.07); }
+        .szenario-karte.correct { border-color: var(--correct); background: rgba(42,157,143,.12); cursor: default; }
+        .szenario-karte.wrong   { border-color: var(--wrong);   background: rgba(217,4,41,.1); }
+        .szenario-karte.in-col  { width: 100%; }
+        .karte-result { font-size: .72rem; margin-top: 4px; color: var(--muted); }
+        .karte-result.r-correct { color: var(--correct); }
+        .karte-result.r-wrong   { color: var(--wrong); }
+
+        /* ── RESULT ── */
+        .result-box { max-width: 640px; width: 100%; padding-top: 40px; text-align: center; }
+        .big-score { font-size: 3.5rem; font-weight: 800; color: var(--correct); margin: 12px 0; }
+        .explanations { text-align: left; margin-top: 24px; }
+        .exp-item { background: var(--card); border-radius: 10px; padding: 14px 16px;
+                     margin-bottom: 10px; border-left: 3px solid var(--border); }
+        .exp-item.correct { border-color: var(--correct); }
+        .exp-item.wrong   { border-color: var(--wrong); }
+        .exp-szenario  { font-size: .83rem; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+        .exp-meta      { font-size: .75rem; color: var(--muted); }
+        .exp-norm      { font-size: .72rem; color: var(--muted); margin-top: 4px;
+                          background: var(--card2); display: inline-block; padding: 3px 10px;
+                          border-radius: 6px; }
+        .exp-erklaerung { font-size: .8rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+        @media (max-width: 640px) {
+            .columns { grid-template-columns: repeat(2, 1fr); }
+            .gesetze-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+    <div class="intro-box">
+        <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo"
+             style="height:36px; filter:brightness(0) invert(1); opacity:.8; margin-bottom:20px;">
+        <h1>Gesetz-Sortierer</h1>
+        <p style="margin-top:6px;">Modul 2 – Rechtliche Grundlagen</p>
+
+        <div class="gesetze-grid" style="margin-top:28px;">
+            <div class="gesetz-chip chip-dsgvo">
+                <div class="gc-icon">🔒</div>
+                <div class="gc-name">DSGVO</div>
+                <div class="gc-desc">Datenschutz-Grundverordnung</div>
+            </div>
+            <div class="gesetz-chip chip-euai">
+                <div class="gc-icon">🤖</div>
+                <div class="gc-name">EU AI Act</div>
+                <div class="gc-desc">KI-Verordnung der EU</div>
+            </div>
+            <div class="gesetz-chip chip-urhg">
+                <div class="gc-icon">©️</div>
+                <div class="gc-name">Urheberrecht</div>
+                <div class="gc-desc">UrhG – Schutz kreativer Werke</div>
+            </div>
+            <div class="gesetz-chip chip-agg">
+                <div class="gc-icon">⚖️</div>
+                <div class="gc-name">AGG</div>
+                <div class="gc-desc">Allgemeines Gleichbehandlungsgesetz</div>
+            </div>
+        </div>
+
+        <p>Klicke ein SmartHire-Szenario an, dann wähle das passende Gesetz.<br>
+           Du bekommst sofort Rückmeldung.</p>
+
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startGame()">Spiel starten ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+    <div class="game-wrap">
+        <div class="game-header">
+            <span style="font-size:.85rem; color:var(--muted);">Klicke ein Szenario an, dann wähle das Gesetz</span>
+            <span class="score-badge" id="score-badge">0 / 6</span>
+        </div>
+
+        <div class="columns">
+            <div class="col col-dsgvo" onclick="assignToCol('dsgvo')">
+                <div class="col-header">
+                    <div class="col-icon">🔒</div>
+                    <div class="col-name">DSGVO</div>
+                    <div class="col-hint">Datenschutz</div>
+                </div>
+                <div class="col-cards" id="cards-dsgvo"></div>
+            </div>
+            <div class="col col-euai" onclick="assignToCol('euai')">
+                <div class="col-header">
+                    <div class="col-icon">🤖</div>
+                    <div class="col-name">EU AI Act</div>
+                    <div class="col-hint">KI-Verordnung</div>
+                </div>
+                <div class="col-cards" id="cards-euai"></div>
+            </div>
+            <div class="col col-urhg" onclick="assignToCol('urhg')">
+                <div class="col-header">
+                    <div class="col-icon">©️</div>
+                    <div class="col-name">Urheberrecht</div>
+                    <div class="col-hint">UrhG</div>
+                </div>
+                <div class="col-cards" id="cards-urhg"></div>
+            </div>
+            <div class="col col-agg" onclick="assignToCol('agg')">
+                <div class="col-header">
+                    <div class="col-icon">⚖️</div>
+                    <div class="col-name">AGG</div>
+                    <div class="col-hint">Gleichbehandlung</div>
+                </div>
+                <div class="col-cards" id="cards-agg"></div>
+            </div>
+        </div>
+
+        <div class="pool-label">SmartHire-Szenarien – klicke eins an, dann wähle das Gesetz</div>
+        <div class="scenario-pool" id="scenario-pool"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="result-btn" onclick="showResult()"
+                    style="display:none;">Ergebnis anzeigen ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+    <div class="result-box">
+        <p style="color:var(--correct); font-size:.8rem; text-transform:uppercase; letter-spacing:.1em;">Abgeschlossen</p>
+        <div class="big-score" id="final-score">0 / 6</div>
+        <p id="final-sub" style="color:var(--muted);"></p>
+        <div class="explanations" id="explanations"></div>
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="restartGame()">Nochmal ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const GESETZE_INFO = {
+    dsgvo: { name: 'DSGVO',          icon: '🔒' },
+    euai:  { name: 'EU AI Act',      icon: '🤖' },
+    urhg:  { name: 'Urheberrecht',   icon: '©️' },
+    agg:   { name: 'AGG',            icon: '⚖️' },
+};
+
+const SZENARIEN = [
+    {
+        id: 's1',
+        text: 'SmartHire versendet Absagen, ohne Bewerber darüber zu informieren, dass eine KI die Entscheidung getroffen hat.',
+        gesetz: 'dsgvo',
+        norm: 'DSGVO Art. 13 Abs. 2 lit. f',
+        erklaerung: 'Betroffene müssen informiert werden, wenn automatisierte Entscheidungen über sie getroffen werden – auch ohne Nachfrage.'
+    },
+    {
+        id: 's2',
+        text: 'Das SmartHire-Modell wurde mit Trainingsdaten aus dem Jahr 2010 trainiert – ohne Prüfung auf Aktualität und Repräsentativität.',
+        gesetz: 'euai',
+        norm: 'EU AI Act Art. 10',
+        erklaerung: 'Trainingsdaten für Hochrisiko-KI müssen relevant, repräsentativ, fehlerfrei und aktuell sein.'
+    },
+    {
+        id: 's3',
+        text: 'SmartHire generiert Absageschreiben automatisch im unverwechselbaren Schreibstil eines bekannten deutschen Autors.',
+        gesetz: 'urhg',
+        norm: 'UrhG § 2 / § 23',
+        erklaerung: 'Der persönliche Schreibstil eines Autors kann als schutzwürdiges Werk oder als Teil der Persönlichkeit urheberrechtlich relevant sein.'
+    },
+    {
+        id: 's4',
+        text: 'SmartHire bewertet Bewerberinnen mit Elternzeit-Einträgen im Lebenslauf systematisch schlechter als andere Kandidaten.',
+        gesetz: 'agg',
+        norm: 'AGG § 3 Abs. 2',
+        erklaerung: 'Elternzeit betrifft statistisch überwiegend Frauen. Ein scheinbar neutrales Kriterium, das eine Gruppe unverhältnismäßig benachteiligt, ist mittelbare Diskriminierung.'
+    },
+    {
+        id: 's5',
+        text: 'Muster GmbH speichert alle abgelehnten Bewerbungsunterlagen dauerhaft ohne festgelegte Löschfrist.',
+        gesetz: 'dsgvo',
+        norm: 'DSGVO Art. 5 Abs. 1 lit. e',
+        erklaerung: 'Der Grundsatz der Speicherbegrenzung verbietet dauerhafte Speicherung personenbezogener Daten ohne Notwendigkeit. Üblich sind 6 Monate nach Abschluss des Bewerbungsverfahrens.'
+    },
+    {
+        id: 's6',
+        text: 'SmartHire trägt keine CE-Kennzeichnung, obwohl es als Hochrisiko-KI gilt und in der EU eingesetzt wird.',
+        gesetz: 'euai',
+        norm: 'EU AI Act Art. 48',
+        erklaerung: 'Hochrisiko-KI-Systeme müssen eine CE-Kennzeichnung tragen, bevor sie in der EU in Verkehr gebracht oder in Betrieb genommen werden.'
+    },
+];
+
+let selectedCard = null;
+let placed = {};
+let score  = 0;
+
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function startGame() {
+    selectedCard = null;
+    placed = {};
+    score  = 0;
+    ['dsgvo','euai','urhg','agg'].forEach(g => {
+        document.getElementById('cards-' + g).innerHTML = '';
+    });
+    const pool = document.getElementById('scenario-pool');
+    pool.innerHTML = '';
+    shuffle([...SZENARIEN]).forEach(s => {
+        const el = document.createElement('div');
+        el.className   = 'szenario-karte';
+        el.id          = 's-' + s.id;
+        el.dataset.id  = s.id;
+        el.textContent = s.text;
+        el.onclick     = () => onCardClick(el);
+        pool.appendChild(el);
+    });
+    document.getElementById('score-badge').textContent     = '0 / ' + SZENARIEN.length;
+    document.getElementById('result-btn').style.display    = 'none';
+    show('screen-game');
+}
+
+function restartGame() { startGame(); }
+
+function onCardClick(el) {
+    if (el.classList.contains('correct') || el.classList.contains('wrong')) return;
+    if (selectedCard === el) { el.classList.remove('selected'); selectedCard = null; return; }
+    if (selectedCard) selectedCard.classList.remove('selected');
+    selectedCard = el;
+    el.classList.add('selected');
+}
+
+function assignToCol(gesetz) {
+    if (!selectedCard) return;
+    const szId    = selectedCard.dataset.id;
+    const sz      = SZENARIEN.find(s => s.id === szId);
+    const correct = sz.gesetz === gesetz;
+
+    selectedCard.classList.remove('selected');
+    selectedCard.classList.add('in-col', correct ? 'correct' : 'wrong');
+
+    const label = document.createElement('div');
+    label.className = 'karte-result ' + (correct ? 'r-correct' : 'r-wrong');
+    if (correct) {
+        label.textContent = '✓ ' + GESETZE_INFO[gesetz].name;
+        score++;
+    } else {
+        label.textContent = '✗ Richtig: ' + GESETZE_INFO[sz.gesetz].name;
+    }
+    selectedCard.appendChild(label);
+
+    document.getElementById('cards-' + gesetz).appendChild(selectedCard);
+    placed[szId] = gesetz;
+    selectedCard = null;
+
+    document.getElementById('score-badge').textContent = score + ' / ' + SZENARIEN.length;
+
+    if (Object.keys(placed).length === SZENARIEN.length) {
+        document.getElementById('result-btn').style.display = 'inline-block';
+    }
+}
+
+function showResult() {
+    const pct = Math.round((score / SZENARIEN.length) * 100);
+    document.getElementById('final-score').textContent = score + ' / ' + SZENARIEN.length;
+    document.getElementById('final-sub').textContent =
+        pct >= 80 ? '🌟 Ausgezeichnet!' : pct >= 50 ? '👍 Gut gemacht!' : '📚 Nochmal versuchen?';
+
+    document.getElementById('explanations').innerHTML = SZENARIEN.map(s => {
+        const playerGesetz = placed[s.id] || null;
+        const correct      = playerGesetz === s.gesetz;
+        return `<div class="exp-item ${correct ? 'correct' : 'wrong'}">
+            <div class="exp-szenario">${s.text}</div>
+            <div class="exp-meta">
+                ${correct
+                    ? `✅ Richtig: ${GESETZE_INFO[s.gesetz].icon} ${GESETZE_INFO[s.gesetz].name}`
+                    : `❌ Du: ${playerGesetz ? GESETZE_INFO[playerGesetz].icon + ' ' + GESETZE_INFO[playerGesetz].name : '–'}
+                       &nbsp;·&nbsp; Richtig: ${GESETZE_INFO[s.gesetz].icon} ${GESETZE_INFO[s.gesetz].name}`}
+            </div>
+            <div class="exp-norm">${s.norm}</div>
+            <div class="exp-erklaerung">${s.erklaerung}</div>
+        </div>`;
+    }).join('');
+
+    show('screen-result');
+}
+
+function shuffle(arr) {
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+</script>
+</body>
+</html>

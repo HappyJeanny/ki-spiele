@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Szenario-Spiel: Rechtliche Grundlagen | KI-Beauftragter</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:    #005f73;
+            --green:   #2a9d8f;
+            --dark:    #0f172a;
+            --card:    #1e293b;
+            --card2:   #263348;
+            --text:    #f1f5f9;
+            --muted:   #94a3b8;
+            --border:  #334155;
+            --correct: #2a9d8f;
+            --wrong:   #d90429;
+            --yellow:  #f59e0b;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--dark);
+            color: var(--text);
+            min-height: 100vh;
+        }
+
+        .screen { display: none; min-height: 100vh; }
+        .screen.active { display: flex; }
+
+        .center-layout {
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .card {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 480px;
+            border: 1px solid var(--border);
+        }
+
+        .card .logo {
+            height: 40px;
+            margin-bottom: 24px;
+            filter: brightness(0) invert(1);
+            opacity: 0.85;
+        }
+
+        h1 { font-size: 1.6rem; color: var(--text); margin-bottom: 8px; }
+        h2 { font-size: 1.2rem; color: var(--text); margin-bottom: 8px; }
+        p  { color: var(--muted); font-size: 0.9rem; line-height: 1.6; }
+
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+        .badge-blue   { background: var(--blue);   color: white; }
+        .badge-green  { background: var(--green);  color: white; }
+        .badge-yellow { background: var(--yellow); color: #1a1a1a; }
+
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+        .btn-primary   { background: var(--blue);  color: white; }
+        .btn-primary:hover { background: #004d5e; }
+        .btn-secondary { background: var(--green); color: white; }
+        .btn-secondary:hover { background: #229688; }
+        .btn-outline {
+            background: transparent;
+            color: var(--muted);
+            border: 1px solid var(--border);
+        }
+        .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 13px 16px;
+            background: var(--card2);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            color: var(--text);
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            margin-top: 8px;
+        }
+        input:focus { border-color: var(--blue); }
+        input::placeholder { color: var(--muted); }
+
+        label { font-size: 0.85rem; color: var(--muted); display: block; margin-top: 16px; }
+
+        .error-msg { color: #fca5a5; font-size: 0.85rem; margin-top: 8px; display: none; }
+        .error-msg.show { display: block; }
+
+        /* ── CONSENT ── */
+        #screen-consent { flex-direction: column; align-items: center; justify-content: center; padding: 20px; }
+
+        .consent-box {
+            background: var(--card);
+            border-radius: 20px;
+            padding: 40px 36px;
+            width: 100%;
+            max-width: 540px;
+            border: 1px solid var(--border);
+        }
+        .consent-box h1 { font-size: 1.4rem; margin-bottom: 16px; }
+        .consent-text {
+            background: var(--card2);
+            border-radius: 10px;
+            padding: 16px;
+            margin: 20px 0;
+            font-size: 0.85rem;
+            color: var(--muted);
+            line-height: 1.7;
+            border-left: 3px solid var(--blue);
+        }
+        .consent-text strong { color: var(--text); }
+        .checkbox-row { display: flex; align-items: flex-start; gap: 12px; margin: 20px 0; }
+        .checkbox-row input[type="checkbox"] {
+            width: 20px; height: 20px; margin-top: 2px; flex-shrink: 0;
+            accent-color: var(--blue); cursor: pointer;
+        }
+        .checkbox-row label { font-size: 0.88rem; color: var(--text); cursor: pointer; margin-top: 0; }
+        .consent-box a { color: var(--green); text-decoration: none; }
+        .consent-box a:hover { text-decoration: underline; }
+
+        /* ── ROLE ── */
+        .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 24px; }
+        .role-grid .role-card:last-child:nth-child(odd) { grid-column: 1 / -1; }
+        .role-card {
+            background: var(--card2);
+            border: 2px solid var(--border);
+            border-radius: 14px;
+            padding: 24px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .role-card:hover { border-color: var(--blue); background: #1a2f42; }
+        .role-icon { font-size: 2.5rem; margin-bottom: 12px; }
+        .role-card h3 { font-size: 1rem; margin-bottom: 4px; }
+        .role-card p { font-size: 0.78rem; }
+
+        /* ── LOBBY ── */
+        #screen-lobby { flex-direction: column; align-items: center; justify-content: flex-start; padding: 40px 20px; }
+        .lobby-container { width: 100%; max-width: 600px; }
+        .room-code-display {
+            background: var(--card);
+            border-radius: 16px;
+            padding: 28px;
+            text-align: center;
+            border: 2px solid var(--blue);
+            margin-bottom: 24px;
+        }
+        .room-code-display .label {
+            font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--muted); margin-bottom: 8px;
+        }
+        .room-code { font-size: 3rem; font-weight: 800; letter-spacing: 0.3em; color: var(--blue); }
+        .room-code-hint { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+        .player-list-card {
+            background: var(--card); border-radius: 16px; padding: 24px;
+            border: 1px solid var(--border); margin-bottom: 20px;
+        }
+        .player-list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+        .player-list-header h3 { font-size: 1rem; }
+        .player-count { font-size: 0.85rem; color: var(--muted); }
+        .player-list { list-style: none; }
+        .player-item { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-radius: 8px; }
+        .player-item:hover { background: var(--card2); }
+        .player-avatar {
+            width: 34px; height: 34px; border-radius: 50%; background: var(--blue);
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 700; font-size: 0.9rem; flex-shrink: 0;
+        }
+        .player-name { font-size: 0.95rem; }
+        .empty-lobby { text-align: center; padding: 20px; color: var(--muted); font-size: 0.85rem; }
+
+        /* ── QUESTION ── */
+        #screen-question { flex-direction: column; padding: 0; }
+        .timer-bar-container { height: 6px; background: var(--border); position: sticky; top: 0; z-index: 10; }
+        .timer-bar { height: 100%; background: var(--blue); transition: width 0.1s linear, background 0.5s; width: 100%; }
+        .question-layout {
+            display: flex; flex: 1; padding: 24px 20px;
+            max-width: 800px; margin: 0 auto; width: 100%; flex-direction: column;
+        }
+        .question-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .q-counter { font-size: 0.85rem; color: var(--muted); }
+        .timer-display {
+            font-size: 1.2rem; font-weight: 800; color: var(--blue);
+            font-variant-numeric: tabular-nums; min-width: 48px; text-align: right;
+        }
+        .timer-display.urgent { color: var(--wrong); animation: pulse 0.5s infinite alternate; }
+        @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+        .scenario-box {
+            background: var(--card); border-radius: 14px; padding: 20px 22px;
+            margin-bottom: 16px; border-left: 4px solid var(--blue);
+        }
+        .scenario-label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--blue); font-weight: 700; margin-bottom: 6px;
+        }
+        .scenario-text { font-size: 0.9rem; color: var(--muted); line-height: 1.6; }
+        .question-text { font-size: 1.2rem; font-weight: 700; line-height: 1.4; margin-bottom: 20px; }
+        .answers-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        @media (max-width: 560px) { .answers-grid { grid-template-columns: 1fr; } .role-grid { grid-template-columns: 1fr; } }
+        .answer-btn {
+            background: var(--card); border: 2px solid var(--border); border-radius: 12px;
+            padding: 18px 16px; color: var(--text); font-size: 0.88rem; line-height: 1.5;
+            text-align: left; cursor: pointer; transition: all 0.15s;
+            display: flex; gap: 12px; align-items: flex-start;
+        }
+        .answer-btn:hover:not(:disabled) { border-color: var(--blue); background: var(--card2); }
+        .answer-btn.selected { border-color: var(--blue); background: rgba(0,95,115,0.15); }
+        .answer-btn.correct  { border-color: var(--correct); background: rgba(42,157,143,0.15); }
+        .answer-btn.wrong    { border-color: var(--wrong);   background: rgba(217,4,41,0.1); }
+        .answer-btn:disabled { cursor: default; }
+        .answer-letter {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 26px; height: 26px; border-radius: 50%; background: var(--card2);
+            color: var(--muted); font-weight: 700; font-size: 0.8rem; flex-shrink: 0;
+        }
+        .answer-btn.selected .answer-letter { background: var(--blue);    color: white; }
+        .answer-btn.correct  .answer-letter { background: var(--correct); color: white; }
+        .answer-btn.wrong    .answer-letter { background: var(--wrong);   color: white; }
+        .waiting-indicator { text-align: center; padding: 20px; color: var(--muted); font-size: 0.88rem; margin-top: 16px; }
+        .waiting-dot { animation: blink 1.2s infinite; }
+        .waiting-dot:nth-child(2) { animation-delay: 0.2s; }
+        .waiting-dot:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes blink { 0%, 100% { opacity: 0.3; } 50% { opacity: 1; } }
+
+        /* ── REVEAL ── */
+        #screen-reveal { flex-direction: column; padding: 24px 20px; align-items: center; }
+        .reveal-container { width: 100%; max-width: 700px; }
+        .reveal-header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+        .reveal-icon { font-size: 2rem; line-height: 1; }
+        .correct-answer-box {
+            background: rgba(42,157,143,0.15); border: 1px solid var(--correct);
+            border-radius: 12px; padding: 14px 18px; margin-bottom: 16px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .correct-answer-box .check { color: var(--correct); font-size: 1.3rem; }
+        .correct-answer-box .text  { font-size: 0.9rem; color: var(--text); }
+        .explanation-box { background: var(--card); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; border-left: 4px solid var(--green); }
+        .explanation-box .ex-label {
+            font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.1em;
+            color: var(--green); font-weight: 700; margin-bottom: 8px;
+        }
+        .explanation-box p { font-size: 0.88rem; color: var(--text); line-height: 1.7; }
+        .norm-tag {
+            display: inline-block; background: var(--card2); border: 1px solid var(--border);
+            border-radius: 8px; padding: 5px 12px; font-size: 0.75rem; color: var(--muted); margin-top: 8px;
+        }
+        .answer-stats { background: var(--card); border-radius: 12px; padding: 18px; margin-bottom: 16px; }
+        .answer-stats h4 {
+            font-size: 0.8rem; color: var(--muted); text-transform: uppercase;
+            letter-spacing: 0.08em; margin-bottom: 12px;
+        }
+        .stat-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+        .stat-letter {
+            width: 26px; height: 26px; border-radius: 50%; display: flex;
+            align-items: center; justify-content: center; font-size: 0.78rem;
+            font-weight: 700; flex-shrink: 0;
+        }
+        .stat-letter.is-correct { background: var(--correct); color: white; }
+        .stat-letter.is-wrong   { background: var(--card2);   color: var(--muted); }
+        .stat-bar-bg { flex: 1; height: 10px; background: var(--card2); border-radius: 5px; overflow: hidden; }
+        .stat-bar-fill { height: 100%; border-radius: 5px; background: var(--border); transition: width 0.5s ease; }
+        .stat-bar-fill.is-correct { background: var(--correct); }
+        .stat-count { font-size: 0.8rem; color: var(--muted); min-width: 20px; text-align: right; }
+        .score-bump { text-align: center; font-size: 1.1rem; font-weight: 700; color: var(--yellow); margin: 12px 0; }
+
+        /* ── FINAL ── */
+        #screen-final { flex-direction: column; align-items: center; padding: 40px 20px; }
+        .final-container { width: 100%; max-width: 600px; text-align: center; }
+        .podium { display: flex; align-items: flex-end; justify-content: center; gap: 12px; margin: 32px 0; }
+        .podium-place { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+        .podium-name { font-size: 0.85rem; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .podium-score { font-size: 0.78rem; color: var(--muted); }
+        .podium-block { border-radius: 10px 10px 0 0; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; width: 80px; }
+        .place-1 .podium-block { height: 100px; background: #f59e0b; }
+        .place-2 .podium-block { height: 70px;  background: #94a3b8; }
+        .place-3 .podium-block { height: 50px;  background: #cd7c3b; }
+        .all-scores { background: var(--card); border-radius: 14px; padding: 20px; margin-top: 8px; text-align: left; }
+        .score-row { display: flex; align-items: center; gap: 12px; padding: 10px 8px; border-radius: 8px; }
+        .score-row:nth-child(odd) { background: var(--card2); }
+        .score-rank { width: 28px; font-size: 0.85rem; color: var(--muted); text-align: center; flex-shrink: 0; }
+        .score-name { flex: 1; font-size: 0.95rem; }
+        .score-pts  { font-size: 0.95rem; font-weight: 700; color: var(--green); }
+
+        /* ── TOAST ── */
+        .toast {
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            background: var(--card); border: 1px solid var(--border); border-radius: 10px;
+            padding: 12px 20px; font-size: 0.85rem; color: var(--text);
+            z-index: 100; opacity: 0; transition: opacity 0.3s; pointer-events: none; white-space: nowrap;
+        }
+        .toast.show { opacity: 1; }
+
+        /* ── TRAINER BAR ── */
+        .trainer-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background: var(--card); border-top: 1px solid var(--border);
+            padding: 12px 20px; display: flex; gap: 12px; justify-content: center; z-index: 50;
+        }
+        .trainer-bar button {
+            padding: 10px 24px; border: none; border-radius: 8px;
+            font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: background 0.2s;
+        }
+        .tb-next { background: var(--green); color: white; }
+        .tb-next:hover { background: #229688; }
+        .trainer-note { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 8px; padding-bottom: 60px; }
+        .pb-60 { padding-bottom: 60px; }
+    </style>
+</head>
+<body>
+
+<!-- SCREEN 1: DSGVO-Einwilligung -->
+<div id="screen-consent" class="screen active">
+    <div class="consent-box">
+        <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo"
+             style="height:36px; margin-bottom:20px; filter:brightness(0) invert(1); opacity:.8;">
+        <h1>Datenschutz-Hinweis</h1>
+        <p style="margin-top:6px;">Bevor du spielst, benötigen wir deine Einwilligung.</p>
+        <div class="consent-text">
+            <p>Dieses Spiel nutzt <strong>Google Firebase Realtime Database</strong>, um das Multiplayer-Erlebnis zu ermöglichen.</p>
+            <br>
+            <p><strong>Was gespeichert wird:</strong><br>
+            Dein gewählter Nickname, dein Spielfortschritt und deine Punktzahl für die Dauer der Spielsitzung.</p>
+            <br>
+            <p><strong>Kein Login erforderlich.</strong> Es werden keine personenbezogenen Daten wie Name, E-Mail oder Gerätedaten gespeichert, sofern du keinen echten Namen als Nickname eingibst.</p>
+            <br>
+            <p><strong>Betreiber des Dienstes:</strong> Google Ireland Limited, Gordon House, Barrow Street, Dublin 4, Irland. Server-Standort: <strong>europe-west1 (Belgien)</strong>.</p>
+            <br>
+            <p>Weitere Informationen findest du in der <a href="https://ki-strategie.co/datenschutzerklaerung" target="_blank">Datenschutzerklärung</a>.</p>
+        </div>
+        <div class="checkbox-row">
+            <input type="checkbox" id="consent-check">
+            <label for="consent-check">
+                Ich habe den Datenschutz-Hinweis gelesen und stimme der Nutzung von Google Firebase für dieses Spiel zu.
+            </label>
+        </div>
+        <button class="btn btn-primary" id="consent-btn">Zustimmen &amp; fortfahren</button>
+        <p style="font-size:0.75rem; color:var(--muted); margin-top:12px; text-align:center;">
+            Zurück zum <a href="../index.html" style="color:var(--green);">Spielemenü</a>.
+        </p>
+    </div>
+</div>
+
+
+<!-- SCREEN 2: Rolle wählen -->
+<div id="screen-role" class="screen center-layout">
+    <div class="card">
+        <h1>Wer bist du?</h1>
+        <p style="margin-top:6px;">Wähle deine Rolle für das Spiel.</p>
+        <div class="role-grid">
+            <div class="role-card" onclick="selectRole('creator')">
+                <div class="role-icon">🚀</div>
+                <h3>Raum erstellen</h3>
+                <p>Raumcode generieren, Spiel starten</p>
+            </div>
+            <div class="role-card" onclick="selectRole('player')">
+                <div class="role-icon">🙋</div>
+                <h3>Beitreten</h3>
+                <p>Mit Raumcode mitspielen</p>
+            </div>
+            <div class="role-card" onclick="selectRole('solo')">
+                <div class="role-icon">🎯</div>
+                <h3>Solo üben</h3>
+                <p>Alleine spielen, kein Raumcode nötig</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- SCREEN 3a: Raum erstellen -->
+<div id="screen-create" class="screen center-layout">
+    <div class="card">
+        <h1>Raum erstellen</h1>
+        <p style="margin-top:6px;">Ein Raumcode wird generiert. Teile ihn mit deinen Teilnehmer:innen.</p>
+        <div style="margin-top:28px; text-align:center;">
+            <div style="font-size:0.78rem; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); margin-bottom:8px;">Raumcode</div>
+            <div id="create-code" style="font-size:3.2rem; font-weight:800; letter-spacing:0.35em; color:var(--blue);">······</div>
+            <div style="font-size:0.78rem; color:var(--muted); margin-top:6px;">Wird automatisch generiert</div>
+        </div>
+        <button class="btn btn-primary" id="create-btn" onclick="createRoom()" style="margin-top:28px;">Raum öffnen</button>
+        <button class="btn btn-outline" onclick="show('screen-role')">Zurück</button>
+        <div id="create-error" class="error-msg"></div>
+    </div>
+</div>
+
+
+<!-- SCREEN 3b: Beitreten -->
+<div id="screen-join" class="screen center-layout">
+    <div class="card">
+        <h1>Beitreten</h1>
+        <p style="margin-top:6px;">Gib den Raumcode und deinen Nickname ein.</p>
+        <label for="join-code">Raumcode</label>
+        <input type="text" id="join-code" placeholder="z.B. ABC123" maxlength="6"
+               style="text-transform:uppercase; letter-spacing:0.2em; font-size:1.3rem; text-align:center;">
+        <label for="join-name">Dein Nickname</label>
+        <input type="text" id="join-name" placeholder="z.B. Julia" maxlength="20">
+        <button class="btn btn-secondary" onclick="joinRoom()" style="margin-top:20px;">Beitreten</button>
+        <button class="btn btn-outline" onclick="show('screen-role')">Zurück</button>
+        <div id="join-error" class="error-msg"></div>
+    </div>
+</div>
+
+
+<!-- SCREEN 4: Lobby -->
+<div id="screen-lobby" class="screen">
+    <div class="lobby-container">
+        <div class="room-code-display">
+            <div class="label">Raumcode – Teile ihn mit allen Teilnehmer:innen</div>
+            <div class="room-code" id="lobby-code">------</div>
+            <div class="room-code-hint">Seite: spiele/modul-2 · Raumcode eingeben</div>
+        </div>
+        <div class="player-list-card">
+            <div class="player-list-header">
+                <h3>Verbundene Teilnehmer:innen</h3>
+                <span class="player-count" id="lobby-count">0 Personen</span>
+            </div>
+            <ul class="player-list" id="player-list">
+                <li class="empty-lobby">Noch niemand beigetreten …</li>
+            </ul>
+        </div>
+        <div id="trainer-start-area" style="display:none;">
+            <button class="btn btn-secondary" id="start-game-btn" onclick="startGame()" disabled>
+                Spiel starten (mind. 1 Teilnehmer:in)
+            </button>
+            <p class="trainer-note" style="padding-bottom:0; margin-top:8px;">
+                Als Trainer:in steuerst du das Spiel. Teilnehmer:innen spielen auf ihren Geräten.
+            </p>
+        </div>
+        <div id="player-wait-area" style="display:none;">
+            <div style="text-align:center; padding:20px; color:var(--muted); font-size:0.9rem;">
+                Warte auf den Start durch die Trainer:in
+                <span class="waiting-dot"> .</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+<!-- SCREEN 5: Frage -->
+<div id="screen-question" class="screen">
+    <div class="timer-bar-container" id="timer-bar-container">
+        <div class="timer-bar" id="timer-bar"></div>
+    </div>
+    <div class="question-layout">
+        <div class="question-meta">
+            <span class="q-counter" id="q-counter">Frage 1 / 8</span>
+            <span class="badge badge-blue" style="font-size:0.7rem;">SmartHire · Recht</span>
+            <span class="timer-display" id="timer-display">30</span>
+        </div>
+        <div class="scenario-box">
+            <div class="scenario-label">📋 Szenario – Muster GmbH</div>
+            <div class="scenario-text" id="q-scenario"></div>
+        </div>
+        <div class="question-text" id="q-text"></div>
+        <div class="answers-grid" id="answers-grid"></div>
+        <div class="waiting-indicator" id="waiting-indicator" style="display:none;">
+            Antwort gesendet<span class="waiting-dot"> .</span><span class="waiting-dot">.</span><span class="waiting-dot">.</span>
+        </div>
+        <div class="trainer-note" id="trainer-q-note" style="display:none;">Trainer:in-Ansicht</div>
+    </div>
+    <div class="trainer-bar" id="trainer-bar-q" style="display:none;"></div>
+</div>
+
+
+<!-- SCREEN 6: Auflösung -->
+<div id="screen-reveal" class="screen">
+    <div class="reveal-container">
+        <div class="reveal-header">
+            <div class="reveal-icon" id="reveal-icon">✅</div>
+            <div>
+                <h2 id="reveal-q-title"></h2>
+                <p id="reveal-q-num" style="font-size:0.8rem; color:var(--muted);"></p>
+            </div>
+        </div>
+        <div class="correct-answer-box">
+            <span class="check">✔</span>
+            <div class="text"><strong>Richtige Antwort:</strong> <span id="reveal-correct-text"></span></div>
+        </div>
+        <div class="explanation-box">
+            <div class="ex-label">⚖️ Erklärung – Rechtlicher Kontext</div>
+            <p id="reveal-explanation"></p>
+            <div class="norm-tag" id="reveal-norm"></div>
+        </div>
+        <div class="answer-stats">
+            <h4>Auswertung</h4>
+            <div id="stats-bars"></div>
+        </div>
+        <div class="score-bump" id="score-bump" style="display:none;"></div>
+    </div>
+    <div class="trainer-bar" id="trainer-bar-reveal" style="display:none;">
+        <button class="tb-next" id="next-q-btn" onclick="">Weiter ▶</button>
+    </div>
+</div>
+
+
+<!-- SCREEN 7: Abschluss -->
+<div id="screen-final" class="screen">
+    <div class="final-container">
+        <div class="badge badge-green" style="margin-bottom:16px;">🎉 Spiel beendet</div>
+        <h1 style="font-size:2rem;">Ergebnis</h1>
+        <p style="margin-top:8px;">Modul 2 – Rechtliche Grundlagen</p>
+        <div class="podium" id="podium"></div>
+        <div class="all-scores" id="all-scores"></div>
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <a href="../index.html" class="btn btn-outline"
+               style="width:auto; display:inline-block; text-decoration:none; text-align:center;">
+                ← Spielemenü
+            </a>
+            <button class="btn btn-secondary" onclick="restartGame()" style="width:auto;">
+                Nochmal spielen
+            </button>
+        </div>
+    </div>
+</div>
+
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+'use strict';
+
+// ── Firebase Config ───────────────────────────────────────────────
+const FIREBASE_CONFIG = {
+    apiKey: "AIzaSyDe2HjkIdUoClWvFCDQbke9lv7vG4sU_2E",
+    authDomain: "ki-beauftragter-spiele.firebaseapp.com",
+    databaseURL: "https://ki-beauftragter-spiele-default-rtdb.europe-west1.firebasedatabase.app",
+    projectId: "ki-beauftragter-spiele",
+    storageBucket: "ki-beauftragter-spiele.firebasestorage.app",
+    messagingSenderId: "688109679984",
+    appId: "1:688109679984:web:c1feee121e90f94663cbb5"
+};
+
+const QUESTION_TIME = 30;
+
+// ── Fragen – Modul 2: Rechtliche Grundlagen ──────────────────────
+const QUESTIONS = [
+    {
+        titel: 'Informationspflicht bei KI-Entscheidungen',
+        szenario: 'Bewerber der Muster GmbH erhalten nur eine Standard-Absage per E-Mail. Es gibt keinen Hinweis, dass SmartHire die Vorauswahl getroffen hat.',
+        frage: 'Welche Pflicht hat die Muster GmbH verletzt?',
+        optionen: [
+            'Datenminimierung (DSGVO Art. 5 Abs. 1 lit. c)',
+            'Informationspflicht bei automatisierten Entscheidungen (DSGVO Art. 13 Abs. 2 lit. f i.V.m. Art. 22)',
+            'Risikodokumentation (EU AI Act Art. 9)',
+            'Keine – Absagen müssen nicht begründet werden'
+        ],
+        richtig: 1,
+        erklaerung: 'Werden automatisierte Entscheidungen getroffen, müssen Betroffene darüber informiert werden – auch ohne Nachfrage. Muster GmbH muss in der Datenschutzerklärung oder im Bewerbungsprozess auf den KI-Einsatz hinweisen.',
+        norm: 'DSGVO Art. 13 Abs. 2 lit. f i.V.m. Art. 22'
+    },
+    {
+        titel: 'Betreiberpflichten im EU AI Act',
+        szenario: 'SmartHire wurde von einem Drittanbieter entwickelt. Muster GmbH setzt es ein, ohne eine eigene Risikoprüfung durchzuführen.',
+        frage: 'Gegen welche Pflicht verstößt Muster GmbH als Betreiber?',
+        optionen: [
+            'DSGVO Art. 28 – kein Auftragsverarbeitungsvertrag abgeschlossen',
+            'EU AI Act Art. 26 – Betreiber müssen eigene Pflichten erfüllen, unabhängig vom Anbieter',
+            'AGG § 12 – Arbeitgeber muss Benachteiligung aktiv verhindern',
+            'Keine – der Anbieter trägt die alleinige Verantwortung'
+        ],
+        richtig: 1,
+        erklaerung: 'Als Betreiber einer Hochrisiko-KI trägt Muster GmbH eigene Pflichten nach EU AI Act Art. 26 – z.B. Anweisungen des Anbieters befolgen, menschliche Aufsicht sicherstellen und den Einsatzzweck dokumentieren.',
+        norm: 'EU AI Act Art. 26 (Pflichten des Betreibers)'
+    },
+    {
+        titel: 'Grundsatz der Datenminimierung',
+        szenario: 'SmartHire analysiert Lebensläufe anhand aller verfügbaren Angaben – inklusive Hobbys, Wohnort und Vereinsmitgliedschaften.',
+        frage: 'Welcher DSGVO-Grundsatz wird verletzt?',
+        optionen: [
+            'Zweckbindung (DSGVO Art. 5 Abs. 1 lit. b)',
+            'Datenminimierung (DSGVO Art. 5 Abs. 1 lit. c)',
+            'Richtigkeit (DSGVO Art. 5 Abs. 1 lit. d)',
+            'Speicherbegrenzung (DSGVO Art. 5 Abs. 1 lit. e)'
+        ],
+        richtig: 1,
+        erklaerung: 'Es dürfen nur die Daten verarbeitet werden, die für den konkreten Zweck notwendig sind. Hobbys und Wohnort sind für eine Eignungsbewertung regelmäßig nicht erforderlich – ihre Verarbeitung verstößt gegen den Grundsatz der Datenminimierung.',
+        norm: 'DSGVO Art. 5 Abs. 1 lit. c – Datenminimierung'
+    },
+    {
+        titel: 'Auskunftsrecht und Erläuterungspflicht',
+        szenario: 'Ein abgelehnter Bewerber fragt schriftlich nach dem Grund seiner Ablehnung. Muster GmbH antwortet nicht.',
+        frage: 'Welches Recht des Bewerbers wurde verletzt?',
+        optionen: [
+            'Recht auf Datenübertragbarkeit (DSGVO Art. 20)',
+            'Auskunftsrecht (DSGVO Art. 15) und Recht auf Erläuterung der Entscheidung (DSGVO Art. 22 Abs. 3)',
+            'Recht auf Berichtigung (DSGVO Art. 16)',
+            'Widerspruchsrecht gegen Profiling (DSGVO Art. 21)'
+        ],
+        richtig: 1,
+        erklaerung: 'Betroffene haben das Recht auf Auskunft über ihre verarbeiteten Daten (Art. 15) und auf Erläuterung zu automatisierten Entscheidungen (Art. 22 Abs. 3). Muster GmbH muss innerhalb eines Monats antworten.',
+        norm: 'DSGVO Art. 15 i.V.m. Art. 22 Abs. 3'
+    },
+    {
+        titel: 'Scraping und Rechtsgrundlagen',
+        szenario: 'Die Trainingsdaten für SmartHire wurden aus öffentlich zugänglichen LinkedIn-Profilen ohne Einwilligung der Betroffenen gesammelt.',
+        frage: 'Welche rechtlichen Probleme entstehen dabei?',
+        optionen: [
+            'Nur DSGVO Art. 6 – keine Rechtsgrundlage für die Verarbeitung personenbezogener Daten',
+            'Nur UrhG § 44b – kommerzielles Text- und Data-Mining ohne Vorbehalt-Prüfung',
+            'Beide – DSGVO Art. 6 und UrhG § 44b sind betroffen',
+            'Keine – öffentlich sichtbare Daten sind frei verwendbar'
+        ],
+        richtig: 2,
+        erklaerung: 'Öffentlich zugängliche Daten sind nicht automatisch frei verarbeitbar. Personenbezogene Daten brauchen eine Rechtsgrundlage (DSGVO Art. 6). Kommerzielles Scraping kann gegen UrhG § 44b verstoßen, wenn der Rechtsinhaber die Nutzung durch einen maschinenlesbaren Vorbehalt gesperrt hat.',
+        norm: 'DSGVO Art. 6 (Rechtsgrundlage) · UrhG § 44b (Text und Data Mining)'
+    },
+    {
+        titel: 'Mittelbare Diskriminierung durch KI',
+        szenario: 'SmartHire bewertet Bewerber mit Elternzeit-Einträgen im Lebenslauf systematisch schlechter – was faktisch Frauen benachteiligt, da Elternzeit überwiegend von Frauen genommen wird.',
+        frage: 'Gegen welches Gesetz verstößt das?',
+        optionen: [
+            'DSGVO Art. 5 – Grundsätze der Datenverarbeitung',
+            'EU AI Act Art. 10 – Anforderungen an Trainingsdaten',
+            'AGG § 3 Abs. 2 – mittelbare Diskriminierung wegen des Geschlechts',
+            'Kein Verstoß – Elternzeit ist ein neutrales Merkmal'
+        ],
+        richtig: 2,
+        erklaerung: 'Mittelbare Diskriminierung liegt vor, wenn ein scheinbar neutrales Kriterium eine Gruppe unverhältnismäßig benachteiligt (AGG § 3 Abs. 2). Da Elternzeit statistisch überwiegend Frauen betrifft, ist die Benachteiligung geschlechtsbezogen.',
+        norm: 'AGG § 3 Abs. 2 – mittelbare Diskriminierung wegen des Geschlechts'
+    },
+    {
+        titel: 'Datenschutz-Folgenabschätzung (DSFA)',
+        szenario: 'Muster GmbH hat SmartHire in Betrieb genommen, ohne vorher eine Datenschutz-Folgenabschätzung durchzuführen.',
+        frage: 'Wann ist eine DSFA nach DSGVO verpflichtend?',
+        optionen: [
+            'Ab 500 verarbeiteten Datensätzen pro Jahr',
+            'Bei jeder KI-Nutzung im Unternehmen',
+            'Bei Verarbeitungen, die voraussichtlich ein hohes Risiko für Rechte und Freiheiten von Personen aufweisen (DSGVO Art. 35)',
+            'Nur bei der Verarbeitung besonderer Kategorien nach DSGVO Art. 9'
+        ],
+        richtig: 2,
+        erklaerung: 'Automatisierte Entscheidungen in der Personalauswahl gelten als hohes Risiko für Betroffene. Eine DSFA ist nach DSGVO Art. 35 vor der Inbetriebnahme Pflicht. Sie analysiert Risiken und dokumentiert Schutzmaßnahmen.',
+        norm: 'DSGVO Art. 35 – Datenschutz-Folgenabschätzung'
+    },
+    {
+        titel: 'Konformitätsbewertung bei Hochrisiko-KI',
+        szenario: 'SmartHire wurde als Hochrisiko-KI nach EU AI Act Anhang III Nr. 4 (Personalauswahl) eingestuft. Der Anbieter fragt, welche Konformitätsbewertung erforderlich ist.',
+        frage: 'Welche Aussage ist korrekt?',
+        optionen: [
+            'Hochrisiko-KI muss immer von einer externen Stelle (Notified Body) zertifiziert werden',
+            'Für KI-Systeme nach Anhang III Nr. 4 ist eine interne Selbstbewertung durch den Anbieter ausreichend',
+            'Eine Konformitätsbewertung ist freiwillig und hat keine rechtlichen Folgen',
+            'Die Bewertung muss jährlich wiederholt werden'
+        ],
+        richtig: 1,
+        erklaerung: 'Für die meisten Anhang-III-Systeme – einschließlich KI in der Personalauswahl (Nr. 4) – ist eine interne Konformitätsbewertung nach Anhang VI möglich. Eine externe Notified Body ist nach EU AI Act Art. 43 Abs. 1 nur bei biometrischen Identifizierungssystemen (Anhang III Nr. 1) ohne harmonisierte Normen zwingend.',
+        norm: 'EU AI Act Art. 43 Abs. 1 · Anhang VI (interne Konformitätsbewertung)'
+    }
+];
+
+// ── State ─────────────────────────────────────────────────────────
+let db = null, role = null, roomCode = null, playerId = null;
+let playerName = null, currentListeners = [], timerInterval = null;
+let myAnswer = null, currentQ = 0;
+
+// ── Helpers ───────────────────────────────────────────────────────
+function show(id) {
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+}
+
+function genId(len = 6) {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    return Array.from({length: len}, () => chars[Math.floor(Math.random() * chars.length)]).join('');
+}
+
+function showToast(msg, duration = 2500) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), duration);
+}
+
+function clearListeners() {
+    currentListeners.forEach(fn => fn());
+    currentListeners = [];
+}
+
+// ── Consent ───────────────────────────────────────────────────────
+const consentCheck = document.getElementById('consent-check');
+const consentBtn   = document.getElementById('consent-btn');
+
+if (localStorage.getItem('ki-spiele-consent')) {
+    consentCheck.checked = true;
+}
+
+consentBtn.addEventListener('click', async () => {
+    if (!consentCheck.checked) {
+        showToast('Bitte zuerst die Checkbox aktivieren.');
+        consentCheck.focus();
+        return;
+    }
+    consentBtn.disabled = true;
+    consentBtn.textContent = 'Verbinde …';
+    try {
+        await loadFirebase();
+        localStorage.setItem('ki-spiele-consent', Date.now());
+        show('screen-role');
+    } catch (e) {
+        consentBtn.disabled = false;
+        consentBtn.textContent = 'Zustimmen & fortfahren';
+        showToast('Verbindungsfehler – bitte Internetverbindung prüfen.');
+    }
+});
+
+function loadFirebase() {
+    return new Promise((resolve, reject) => {
+        const s1 = document.createElement('script');
+        s1.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js';
+        s1.onerror = reject;
+        s1.onload = () => {
+            const s2 = document.createElement('script');
+            s2.src = 'https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js';
+            s2.onerror = reject;
+            s2.onload = () => {
+                try {
+                    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG);
+                    db = firebase.database();
+                    resolve();
+                } catch(err) { reject(err); }
+            };
+            document.head.appendChild(s2);
+        };
+        document.head.appendChild(s1);
+    });
+}
+
+// ── Role ──────────────────────────────────────────────────────────
+function selectRole(r) {
+    role = r;
+    if (r === 'creator') {
+        const code = genId(6);
+        document.getElementById('create-code').textContent = code;
+        roomCode = code;
+        show('screen-create');
+    } else if (r === 'player') {
+        show('screen-join');
+    } else {
+        startSoloGame();
+    }
+}
+
+// ── Create Room ───────────────────────────────────────────────────
+async function createRoom() {
+    const btn = document.getElementById('create-btn');
+    btn.disabled = true;
+    btn.textContent = 'Erstelle Raum …';
+    playerId = 'creator_' + genId(8);
+    playerName = 'Ersteller:in';
+    try {
+        await db.ref(`rooms/${roomCode}`).set({
+            status: 'lobby', creatorId: playerId,
+            created: firebase.database.ServerValue.TIMESTAMP
+        });
+        await db.ref(`rooms/${roomCode}/players/${playerId}`).set({
+            name: playerName, score: 0, finished: false,
+            joined: firebase.database.ServerValue.TIMESTAMP
+        });
+        db.ref(`rooms/${roomCode}/players/${playerId}`).onDisconnect().remove();
+        enterLobby();
+    } catch(e) {
+        btn.disabled = false;
+        btn.textContent = 'Raum öffnen';
+        const err = document.getElementById('create-error');
+        err.textContent = 'Fehler: ' + e.message;
+        err.classList.add('show');
+    }
+}
+
+// ── Join Room ─────────────────────────────────────────────────────
+async function joinRoom() {
+    const code  = document.getElementById('join-code').value.trim().toUpperCase();
+    const name  = document.getElementById('join-name').value.trim();
+    const errEl = document.getElementById('join-error');
+
+    if (!code || code.length !== 6) {
+        errEl.textContent = 'Bitte einen 6-stelligen Raumcode eingeben.';
+        errEl.classList.add('show'); return;
+    }
+    if (!name) {
+        errEl.textContent = 'Bitte einen Nickname eingeben.';
+        errEl.classList.add('show'); return;
+    }
+    errEl.classList.remove('show');
+
+    try {
+        const snap = await db.ref(`rooms/${code}`).get();
+        if (!snap.exists()) {
+            errEl.textContent = 'Raum nicht gefunden. Raumcode prüfen.';
+            errEl.classList.add('show'); return;
+        }
+        if (snap.val().status !== 'lobby') {
+            errEl.textContent = 'Das Spiel läuft bereits. Wende dich an die Trainer:in.';
+            errEl.classList.add('show'); return;
+        }
+        roomCode = code;
+        playerName = name;
+        playerId = 'p_' + genId(8);
+        await db.ref(`rooms/${roomCode}/players/${playerId}`).set({
+            name: playerName, score: 0,
+            joined: firebase.database.ServerValue.TIMESTAMP
+        });
+        db.ref(`rooms/${roomCode}/players/${playerId}`).onDisconnect().remove();
+        enterLobby();
+    } catch(e) {
+        errEl.textContent = 'Verbindungsfehler: ' + e.message;
+        errEl.classList.add('show');
+    }
+}
+
+// ── Lobby ─────────────────────────────────────────────────────────
+function enterLobby() {
+    document.getElementById('lobby-code').textContent = roomCode;
+    show('screen-lobby');
+    document.getElementById('trainer-start-area').style.display = role === 'creator' ? 'block' : 'none';
+    document.getElementById('player-wait-area').style.display   = role === 'creator' ? 'none'  : 'block';
+
+    const playersRef = db.ref(`rooms/${roomCode}/players`);
+    const off1 = playersRef.on('value', snap => renderPlayerList(snap.val() || {}));
+    currentListeners.push(() => playersRef.off('value', off1));
+
+    const statusRef = db.ref(`rooms/${roomCode}/status`);
+    const off2 = statusRef.on('value', snap => {
+        if (snap.val() === 'playing') { clearListeners(); startLocalMultiGame(); }
+    });
+    currentListeners.push(() => statusRef.off('value', off2));
+}
+
+function renderPlayerList(players) {
+    const list     = document.getElementById('player-list');
+    const count    = document.getElementById('lobby-count');
+    const startBtn = document.getElementById('start-game-btn');
+    const entries  = Object.entries(players);
+
+    count.textContent = entries.length + (entries.length === 1 ? ' Person' : ' Personen');
+    if (entries.length === 0) {
+        list.innerHTML = '<li class="empty-lobby">Noch niemand beigetreten …</li>';
+        if (startBtn) startBtn.disabled = true;
+        return;
+    }
+    list.innerHTML = entries.map(([, p]) => `
+        <li class="player-item">
+            <div class="player-avatar">${(p.name || '?')[0].toUpperCase()}</div>
+            <span class="player-name">${p.name}</span>
+        </li>`).join('');
+    if (startBtn) startBtn.disabled = false;
+}
+
+async function startGame() {
+    document.getElementById('start-game-btn').disabled = true;
+    await db.ref(`rooms/${roomCode}/status`).set('playing');
+}
+
+// ── Multiplayer (self-paced) ──────────────────────────────────────
+function startLocalMultiGame() {
+    currentQ = 0;
+    myAnswer = null;
+    renderMultiQuestion(0);
+}
+
+function renderMultiQuestion(qIndex) {
+    myAnswer = null;
+    currentQ = qIndex;
+    const q = QUESTIONS[qIndex];
+    const letters = ['A','B','C','D'];
+
+    document.getElementById('q-counter').textContent  = `Frage ${qIndex + 1} / ${QUESTIONS.length}`;
+    document.getElementById('q-scenario').textContent = q.szenario;
+    document.getElementById('q-text').textContent     = q.frage;
+
+    document.getElementById('timer-bar-container').style.display = 'none';
+    document.querySelector('.timer-display').style.display       = 'none';
+
+    const grid = document.getElementById('answers-grid');
+    grid.style.pointerEvents = '';
+    grid.innerHTML = q.optionen.map((opt, i) => `
+        <button class="answer-btn" onclick="selectMultiAnswer(${i})">
+            <span class="answer-letter">${letters[i]}</span>
+            <span>${opt}</span>
+        </button>`).join('');
+
+    document.getElementById('waiting-indicator').style.display = 'none';
+    document.getElementById('trainer-bar-q').style.display     = 'none';
+    document.getElementById('trainer-q-note').style.display    = 'none';
+
+    show('screen-question');
+}
+
+function selectMultiAnswer(idx) {
+    if (myAnswer !== null) return;
+    myAnswer = idx;
+    document.getElementById('answers-grid').style.pointerEvents = 'none';
+    document.querySelectorAll('.answer-btn').forEach((b, i) => {
+        if (i === idx) b.classList.add('selected');
+    });
+    setTimeout(() => showMultiReveal(currentQ), 600);
+}
+
+async function showMultiReveal(qIndex) {
+    const q = QUESTIONS[qIndex];
+    const letters = ['A','B','C','D'];
+    const correct = myAnswer === q.richtig;
+
+    document.getElementById('reveal-icon').textContent         = correct ? '🎉' : '📚';
+    document.getElementById('reveal-q-title').textContent      = q.titel;
+    document.getElementById('reveal-q-num').textContent        = `Frage ${qIndex + 1} von ${QUESTIONS.length}`;
+    document.getElementById('reveal-correct-text').textContent = `${letters[q.richtig]}) ${q.optionen[q.richtig]}`;
+    document.getElementById('reveal-explanation').textContent  = q.erklaerung;
+    document.getElementById('reveal-norm').textContent         = q.norm;
+
+    if (correct) {
+        document.getElementById('score-bump').textContent   = '+100 Punkte';
+        document.getElementById('score-bump').style.display = 'block';
+        await db.ref(`rooms/${roomCode}/players/${playerId}/score`)
+            .transaction(s => (s || 0) + 100);
+    } else {
+        document.getElementById('score-bump').style.display = 'none';
+    }
+
+    const barsEl = document.getElementById('stats-bars');
+    barsEl.innerHTML = q.optionen.map((opt, i) => {
+        const isCorr = i === q.richtig;
+        const isSel  = i === myAnswer;
+        return `<div class="stat-row">
+            <div class="stat-letter ${isCorr ? 'is-correct' : 'is-wrong'}">${letters[i]}</div>
+            <div class="stat-bar-bg">
+                <div class="stat-bar-fill ${isCorr ? 'is-correct' : ''}"
+                     style="width:0%" data-w="${isCorr ? '100%' : isSel ? '40%' : '0%'}"></div>
+            </div>
+            <div class="stat-count">${isCorr ? '✓' : isSel ? '✗' : ''}</div>
+        </div>`;
+    }).join('');
+    setTimeout(() => {
+        barsEl.querySelectorAll('.stat-bar-fill').forEach(el => el.style.width = el.dataset.w);
+    }, 100);
+
+    const nextBtn = document.getElementById('next-q-btn');
+    nextBtn.textContent = qIndex + 1 >= QUESTIONS.length ? 'Mein Ergebnis ▶' : 'Weiter ▶';
+    nextBtn.onclick = () => multiNext(qIndex);
+    document.getElementById('trainer-bar-reveal').style.display = 'flex';
+    show('screen-reveal');
+}
+
+async function multiNext(qIndex) {
+    const next = qIndex + 1;
+    if (next >= QUESTIONS.length) {
+        await db.ref(`rooms/${roomCode}/players/${playerId}/finished`).set(true);
+        showMultiFinal();
+    } else {
+        renderMultiQuestion(next);
+    }
+}
+
+function showMultiFinal() {
+    show('screen-final');
+    db.ref(`rooms/${roomCode}/players`).on('value', snap => {
+        const players = Object.values(snap.val() || {})
+            .sort((a, b) => (b.score || 0) - (a.score || 0));
+        const podiumOrder  = players.length >= 3
+            ? [players[1], players[0], players[2]]
+            : players.length === 2 ? [players[1], players[0]] : players;
+        const placeClasses = ['place-2','place-1','place-3'];
+        const placeEmojis  = ['🥈','🥇','🥉'];
+
+        document.getElementById('podium').innerHTML = podiumOrder.map((p, i) => `
+            <div class="podium-place ${placeClasses[i] || ''}">
+                <div class="podium-name">${p ? p.name : ''}</div>
+                <div class="podium-score">${p ? (p.score || 0) : 0} Pkt</div>
+                <div class="podium-block">${placeEmojis[i] || ''}</div>
+            </div>`).join('');
+
+        document.getElementById('all-scores').innerHTML = players.map((p, i) => `
+            <div class="score-row">
+                <div class="score-rank">${i + 1}.</div>
+                <div class="score-name">${p.name}${p.finished ? '' : ' <span style="color:var(--muted);font-size:0.75rem;">spielt noch…</span>'}</div>
+                <div class="score-pts">${p.score || 0} Pkt</div>
+            </div>`).join('');
+    });
+}
+
+// ── Solo ──────────────────────────────────────────────────────────
+let soloScore = 0;
+
+function startSoloGame() {
+    currentQ = 0;
+    soloScore = 0;
+    myAnswer = null;
+    renderSoloQuestion(0);
+}
+
+function renderSoloQuestion(qIndex) {
+    myAnswer = null;
+    currentQ = qIndex;
+    const q = QUESTIONS[qIndex];
+    const letters = ['A','B','C','D'];
+
+    document.getElementById('q-counter').textContent  = `Frage ${qIndex + 1} / ${QUESTIONS.length}`;
+    document.getElementById('q-scenario').textContent = q.szenario;
+    document.getElementById('q-text').textContent     = q.frage;
+
+    const grid = document.getElementById('answers-grid');
+    grid.style.pointerEvents = '';
+    grid.innerHTML = q.optionen.map((opt, i) => `
+        <button class="answer-btn" onclick="selectSoloAnswer(${i})">
+            <span class="answer-letter">${letters[i]}</span>
+            <span>${opt}</span>
+        </button>`).join('');
+
+    document.getElementById('waiting-indicator').style.display = 'none';
+    document.getElementById('trainer-bar-q').style.display     = 'none';
+    document.getElementById('trainer-q-note').style.display    = 'none';
+
+    show('screen-question');
+    startLocalTimer();
+}
+
+function selectSoloAnswer(idx) {
+    if (myAnswer !== null) return;
+    myAnswer = idx;
+    clearTimerInterval();
+    document.getElementById('answers-grid').style.pointerEvents = 'none';
+    document.querySelectorAll('.answer-btn').forEach((b, i) => {
+        if (i === idx) b.classList.add('selected');
+    });
+    setTimeout(() => showSoloReveal(currentQ), 800);
+}
+
+function showSoloReveal(qIndex) {
+    const q = QUESTIONS[qIndex];
+    const letters = ['A','B','C','D'];
+    const correct = myAnswer === q.richtig;
+
+    document.getElementById('reveal-icon').textContent         = correct ? '🎉' : '📚';
+    document.getElementById('reveal-q-title').textContent      = q.titel;
+    document.getElementById('reveal-q-num').textContent        = `Frage ${qIndex + 1} von ${QUESTIONS.length}`;
+    document.getElementById('reveal-correct-text').textContent = `${letters[q.richtig]}) ${q.optionen[q.richtig]}`;
+    document.getElementById('reveal-explanation').textContent  = q.erklaerung;
+    document.getElementById('reveal-norm').textContent         = q.norm;
+
+    const bumpEl = document.getElementById('score-bump');
+    if (correct) {
+        soloScore += 100;
+        bumpEl.textContent   = '+100 Punkte';
+        bumpEl.style.display = 'block';
+    } else {
+        bumpEl.style.display = 'none';
+    }
+
+    const barsEl = document.getElementById('stats-bars');
+    barsEl.innerHTML = q.optionen.map((opt, i) => {
+        const isCorr = i === q.richtig;
+        const isSel  = i === myAnswer;
+        return `<div class="stat-row">
+            <div class="stat-letter ${isCorr ? 'is-correct' : 'is-wrong'}">${letters[i]}</div>
+            <div class="stat-bar-bg">
+                <div class="stat-bar-fill ${isCorr ? 'is-correct' : ''}"
+                     style="width:0%" data-w="${isCorr ? '100%' : isSel ? '40%' : '0%'}"></div>
+            </div>
+            <div class="stat-count">${isCorr ? '✓' : isSel ? '✗' : ''}</div>
+        </div>`;
+    }).join('');
+    setTimeout(() => {
+        barsEl.querySelectorAll('.stat-bar-fill').forEach(el => el.style.width = el.dataset.w);
+    }, 100);
+
+    const nextBtn = document.getElementById('next-q-btn');
+    nextBtn.textContent = qIndex + 1 >= QUESTIONS.length ? 'Ergebnis anzeigen ▶' : 'Weiter ▶';
+    nextBtn.onclick = () => soloNextQuestion(qIndex);
+    document.getElementById('trainer-bar-reveal').style.display = 'flex';
+    show('screen-reveal');
+}
+
+function soloNextQuestion(qIndex) {
+    const next = qIndex + 1;
+    if (next >= QUESTIONS.length) { showSoloFinal(); }
+    else { renderSoloQuestion(next); }
+}
+
+function showSoloFinal() {
+    const max  = QUESTIONS.length * 100;
+    const pct  = Math.round((soloScore / max) * 100);
+    const emoji = pct >= 80 ? '🌟 Ausgezeichnet!' : pct >= 60 ? '👍 Gut gemacht!' : '📚 Noch Potenzial!';
+
+    document.getElementById('podium').innerHTML = `
+        <div style="text-align:center; padding:20px 0;">
+            <div style="font-size:3.5rem;">⚖️</div>
+            <div style="font-size:2.5rem; font-weight:800; color:var(--green); margin-top:8px;">${soloScore}</div>
+            <div style="color:var(--muted); font-size:0.9rem;">von ${max} möglichen Punkten</div>
+        </div>`;
+
+    document.getElementById('all-scores').innerHTML = `
+        <div style="text-align:center; padding:16px;">
+            <div style="font-size:1.1rem; font-weight:600;">${emoji}</div>
+            <div style="color:var(--muted); font-size:0.85rem; margin-top:6px;">${pct}% richtig beantwortet</div>
+        </div>`;
+
+    show('screen-final');
+}
+
+// ── Timer ─────────────────────────────────────────────────────────
+function startLocalTimer() {
+    clearTimerInterval();
+    const bar     = document.getElementById('timer-bar');
+    const display = document.getElementById('timer-display');
+    document.getElementById('timer-bar-container').style.display = '';
+    display.style.display = '';
+    const start = Date.now();
+
+    function tick() {
+        const elapsed   = (Date.now() - start) / 1000;
+        const remaining = Math.max(0, QUESTION_TIME - elapsed);
+        bar.style.width      = ((remaining / QUESTION_TIME) * 100) + '%';
+        bar.style.background = remaining < 5 ? '#d90429' : remaining < 10 ? '#f59e0b' : 'var(--blue)';
+        display.textContent  = Math.ceil(remaining);
+        display.className    = 'timer-display' + (remaining < 5 ? ' urgent' : '');
+        if (remaining <= 0) {
+            clearTimerInterval();
+            if (myAnswer === null) { myAnswer = -1; showSoloReveal(currentQ); }
+        }
+    }
+    tick();
+    timerInterval = setInterval(tick, 200);
+}
+
+function clearTimerInterval() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+// ── Restart ───────────────────────────────────────────────────────
+function restartGame() {
+    clearListeners();
+    clearTimerInterval();
+    if (db && roomCode) db.ref(`rooms/${roomCode}`).remove();
+    roomCode = null; playerId = null; playerName = null;
+    myAnswer = null; currentQ = 0;
+    show('screen-role');
+}
+</script>
+</body>
+</html>
