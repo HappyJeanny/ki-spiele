@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maßnahmen-Sortierer | Modul 3 – Risikomanagement & Datenschutz</title>
+    <link rel="icon" type="image/x-icon" href="../../presentation-template/assets/favicons/favicon.ico">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --dark: #0f172a; --card: #1e293b; --card2: #263348;
+            --text: #f1f5f9; --muted: #94a3b8; --border: #334155;
+            --tech:  #005f73; --org:   #7c3aed; --recht: #0f766e;
+            --correct: #2a9d8f; --wrong: #d90429;
+        }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+               background: var(--dark); color: var(--text); min-height: 100vh; }
+        .screen { display: none; min-height: 100vh; flex-direction: column;
+                  align-items: center; padding: 24px 16px; }
+        .screen.active { display: flex; }
+        h1 { font-size: 1.7rem; margin-bottom: 8px; }
+        p  { color: var(--muted); font-size: .9rem; line-height: 1.6; }
+        .btn { padding: 12px 28px; border: none; border-radius: 10px; font-size: .95rem;
+               font-weight: 600; cursor: pointer; transition: all .2s; }
+        .btn-primary { background: var(--tech); color: white; }
+        .btn-primary:hover { background: #004d5e; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--muted); }
+        .btn-outline:hover { border-color: var(--muted); color: var(--text); }
+
+        /* INTRO */
+        .intro-box { max-width: 580px; text-align: center; padding-top: 40px; }
+        .kat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 24px 0; text-align: left; }
+        .kat-chip { border-radius: 10px; padding: 14px; }
+        .kat-icon { font-size: 1.3rem; margin-bottom: 4px; }
+        .kat-name { font-size: .9rem; font-weight: 700; }
+        .kat-desc { font-size: .72rem; opacity: .85; margin-top: 2px; }
+        .chip-tech  { background: rgba(0,95,115,.2);   border: 1px solid var(--tech);  }
+        .chip-tech  .kat-name, .chip-tech  .kat-desc, .chip-tech  .kat-icon { color: #5ecbe8; }
+        .chip-org   { background: rgba(124,58,237,.2); border: 1px solid var(--org);   }
+        .chip-org   .kat-name, .chip-org   .kat-desc, .chip-org   .kat-icon { color: #c4b5fd; }
+        .chip-recht { background: rgba(15,118,110,.2); border: 1px solid var(--recht); }
+        .chip-recht .kat-name, .chip-recht .kat-desc, .chip-recht .kat-icon { color: #5eead4; }
+
+        /* GAME */
+        .game-wrap { width: 100%; max-width: 900px; }
+        .game-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 8px; }
+        .score-badge { background: var(--card); border: 1px solid var(--border); border-radius: 20px; padding: 6px 16px; font-size: .85rem; font-weight: 700; color: var(--correct); }
+
+        .columns { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 24px; }
+        .col { border-radius: 12px; border: 2px dashed var(--border); min-height: 120px; padding: 10px; transition: all .15s; cursor: pointer; }
+        .col:hover { border-style: solid; }
+        .col-header { margin-bottom: 8px; }
+        .col-icon { font-size: 1.2rem; }
+        .col-name { font-size: .78rem; font-weight: 700; margin-top: 2px; }
+        .col-hint { font-size: .68rem; color: var(--muted); margin-top: 2px; }
+        .col-tech  { border-color: var(--tech);  }
+        .col-tech  .col-name { color: #5ecbe8; }
+        .col-org   { border-color: var(--org);   }
+        .col-org   .col-name { color: #c4b5fd; }
+        .col-recht { border-color: var(--recht); }
+        .col-recht .col-name { color: #5eead4; }
+        .col-cards { display: flex; flex-direction: column; gap: 6px; }
+
+        .pool-label { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 10px; }
+        .scenario-pool { display: flex; flex-wrap: wrap; gap: 8px; padding: 12px; background: var(--card2); border-radius: 12px; min-height: 60px; }
+
+        .massnahmen-karte { background: var(--card); border: 2px solid var(--border); border-radius: 10px; padding: 10px 14px; font-size: .82rem; cursor: pointer; transition: all .15s; line-height: 1.4; user-select: none; }
+        .massnahmen-karte:hover { border-color: var(--muted); }
+        .massnahmen-karte.selected { border-color: white; box-shadow: 0 0 0 2px white; background: rgba(255,255,255,.07); }
+        .massnahmen-karte.correct { border-color: var(--correct); background: rgba(42,157,143,.12); cursor: default; }
+        .massnahmen-karte.wrong   { border-color: var(--wrong);   background: rgba(217,4,41,.1); }
+        .massnahmen-karte.in-col  { width: 100%; }
+        .karte-result { font-size: .72rem; margin-top: 4px; color: var(--muted); }
+        .karte-result.r-correct { color: var(--correct); }
+        .karte-result.r-wrong   { color: var(--wrong); }
+
+        /* RESULT */
+        .result-box { max-width: 640px; width: 100%; padding-top: 40px; text-align: center; }
+        .big-score { font-size: 3.5rem; font-weight: 800; color: var(--correct); margin: 12px 0; }
+        .explanations { text-align: left; margin-top: 24px; }
+        .exp-item { background: var(--card); border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; border-left: 3px solid var(--border); }
+        .exp-item.correct { border-color: var(--correct); }
+        .exp-item.wrong   { border-color: var(--wrong); }
+        .exp-szenario  { font-size: .83rem; color: var(--text); line-height: 1.4; margin-bottom: 6px; }
+        .exp-meta      { font-size: .75rem; color: var(--muted); }
+        .exp-norm      { font-size: .72rem; color: var(--muted); margin-top: 4px; background: var(--card2); display: inline-block; padding: 3px 10px; border-radius: 6px; }
+        .exp-erklaerung { font-size: .8rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+
+        @media (max-width: 640px) {
+            .columns { grid-template-columns: 1fr; }
+            .kat-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- INTRO -->
+<div id="screen-intro" class="screen active">
+    <div class="intro-box">
+        <img src="../../presentation-template/assets/logo-ki-strategie-co.svg" alt="Logo"
+             style="height:36px; filter:brightness(0) invert(1); opacity:.8; margin-bottom:20px;">
+        <h1>Maßnahmen-Sortierer</h1>
+        <p style="margin-top:6px;">Modul 3 – Risikomanagement &amp; Datenschutz</p>
+
+        <div class="kat-grid">
+            <div class="kat-chip chip-tech">
+                <div class="kat-icon">🔧</div>
+                <div class="kat-name">Technisch</div>
+                <div class="kat-desc">Systemseitige Schutzmaßnahmen</div>
+            </div>
+            <div class="kat-chip chip-org">
+                <div class="kat-icon">📋</div>
+                <div class="kat-name">Organisatorisch</div>
+                <div class="kat-desc">Prozesse, Schulung, Dokumentation</div>
+            </div>
+            <div class="kat-chip chip-recht">
+                <div class="kat-icon">⚖️</div>
+                <div class="kat-name">Rechtlich</div>
+                <div class="kat-desc">Gesetzliche Pflichten und Verträge</div>
+            </div>
+        </div>
+
+        <p>Klicke eine Maßnahme an, dann wähle die passende Kategorie.<br>
+           Du bekommst sofort Rückmeldung mit Norm-Referenz.</p>
+
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="startGame()">Spiel starten ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- GAME -->
+<div id="screen-game" class="screen">
+    <div class="game-wrap">
+        <div class="game-header">
+            <span style="font-size:.85rem; color:var(--muted);">Klicke eine Maßnahme an, dann wähle die Kategorie</span>
+            <span class="score-badge" id="score-badge">0 / 6</span>
+        </div>
+
+        <div class="columns">
+            <div class="col col-tech" onclick="assignToCol('tech')">
+                <div class="col-header">
+                    <div class="col-icon">🔧</div>
+                    <div class="col-name">Technisch</div>
+                    <div class="col-hint">TOMs – System & Infrastruktur</div>
+                </div>
+                <div class="col-cards" id="cards-tech"></div>
+            </div>
+            <div class="col col-org" onclick="assignToCol('org')">
+                <div class="col-header">
+                    <div class="col-icon">📋</div>
+                    <div class="col-name">Organisatorisch</div>
+                    <div class="col-hint">Prozesse, Schulung, Governance</div>
+                </div>
+                <div class="col-cards" id="cards-org"></div>
+            </div>
+            <div class="col col-recht" onclick="assignToCol('recht')">
+                <div class="col-header">
+                    <div class="col-icon">⚖️</div>
+                    <div class="col-name">Rechtlich</div>
+                    <div class="col-hint">Pflichten, Meldungen, Verträge</div>
+                </div>
+                <div class="col-cards" id="cards-recht"></div>
+            </div>
+        </div>
+
+        <div class="pool-label">SmartHire-Maßnahmen – klicke eine an, dann wähle die Kategorie</div>
+        <div class="scenario-pool" id="scenario-pool"></div>
+
+        <div style="margin-top:20px; display:flex; gap:10px; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="result-btn" onclick="showResult()" style="display:none;">Ergebnis anzeigen ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<!-- RESULT -->
+<div id="screen-result" class="screen">
+    <div class="result-box">
+        <p style="color:var(--correct); font-size:.8rem; text-transform:uppercase; letter-spacing:.1em;">Abgeschlossen</p>
+        <div class="big-score" id="final-score">0 / 6</div>
+        <p id="final-sub" style="color:var(--muted);"></p>
+        <div class="explanations" id="explanations"></div>
+        <div style="margin-top:28px; display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" onclick="restartGame()">Nochmal ▶</button>
+            <a href="../index.html" class="btn btn-outline" style="text-decoration:none;">← Menü</a>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const KAT_INFO = {
+    tech:  { name: 'Technisch',       icon: '🔧' },
+    org:   { name: 'Organisatorisch', icon: '📋' },
+    recht: { name: 'Rechtlich',       icon: '⚖️' },
+};
+
+const MASSNAHMEN = [
+    {
+        id: 'm1',
+        text: 'Daten werden in SmartHire Ende-zu-Ende verschlüsselt übertragen und gespeichert.',
+        kat: 'tech',
+        norm: 'DSGVO Art. 32 – Sicherheit der Verarbeitung (TOMs)',
+        erklaerung: 'Verschlüsselung ist eine klassische technische Schutzmaßnahme (TOM) nach DSGVO Art. 32 – sie schützt Daten vor unbefugtem Zugriff durch technische Mittel.'
+    },
+    {
+        id: 'm2',
+        text: 'Muster GmbH schult alle HR-Mitarbeiter jährlich zu Datenschutz und KI-Risikomanagement.',
+        kat: 'org',
+        norm: 'DSGVO Art. 32 · ISO 42001 Abschn. 7.2 (Kompetenz)',
+        erklaerung: 'Schulungen sind eine organisatorische Maßnahme: Sie verbessern die menschliche Kompetenz im Umgang mit dem System und reduzieren Bedienfehler – kein technischer Eingriff ins System selbst.'
+    },
+    {
+        id: 'm3',
+        text: 'Muster GmbH meldet das Datenleck fristgerecht innerhalb von 72 Stunden an die Aufsichtsbehörde.',
+        kat: 'recht',
+        norm: 'DSGVO Art. 33 Abs. 1 – Meldepflicht bei Datenpanne',
+        erklaerung: 'Die 72-Stunden-Meldepflicht ist eine gesetzliche Rechtspflicht (DSGVO Art. 33). Sie ist keine freiwillige organisatorische Entscheidung, sondern eine zwingende rechtliche Handlungspflicht.'
+    },
+    {
+        id: 'm4',
+        text: 'Zugriffsrechte auf SmartHire werden nach dem Least-Privilege-Prinzip über Rollen gesteuert.',
+        kat: 'tech',
+        norm: 'DSGVO Art. 32 – Zugangs- und Zugriffskontrolle (TOMs)',
+        erklaerung: 'Rollenbasierte Zugriffssteuerung ist eine technische Maßnahme (TOM): Das System wird so konfiguriert, dass jeder Nutzer nur auf die Daten zugreifen kann, die er für seine Aufgabe benötigt.'
+    },
+    {
+        id: 'm5',
+        text: 'Nach jedem größeren SmartHire-Update überprüft das Team die Risikomatrix und aktualisiert sie bei Bedarf.',
+        kat: 'org',
+        norm: 'EU AI Act Art. 9 – kontinuierliches Risikomanagementsystem',
+        erklaerung: 'Die regelmäßige Überprüfung und Aktualisierung der Risikobewertung ist eine organisatorische Governance-Maßnahme. Sie entspricht der Anforderung des EU AI Act Art. 9 nach einem lebenszyklusbegleitenden Risikomanagementsystem.'
+    },
+    {
+        id: 'm6',
+        text: 'Stellt Muster GmbH ein hohes Risiko für Bewerber fest, informiert sie die Betroffenen unverzüglich über die Datenpanne.',
+        kat: 'recht',
+        norm: 'DSGVO Art. 34 Abs. 1 – Benachrichtigung betroffener Personen',
+        erklaerung: 'Die Pflicht zur Benachrichtigung der Betroffenen bei hohem Risiko ist eine gesetzliche Rechtspflicht (DSGVO Art. 34) – keine freiwillige Kulanzleistung und keine rein organisatorische Entscheidung.'
+    }
+];
+
+let selectedCard = null;
+let placed = {};
+let score  = 0;
+
+function show(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+function startGame() {
+    selectedCard = null; placed = {}; score = 0;
+    ['tech','org','recht'].forEach(k => { document.getElementById('cards-' + k).innerHTML = ''; });
+    const pool = document.getElementById('scenario-pool');
+    pool.innerHTML = '';
+    shuffle([...MASSNAHMEN]).forEach(m => {
+        const el = document.createElement('div');
+        el.className = 'massnahmen-karte';
+        el.id = 's-' + m.id;
+        el.dataset.id = m.id;
+        el.textContent = m.text;
+        el.onclick = () => onCardClick(el);
+        pool.appendChild(el);
+    });
+    document.getElementById('score-badge').textContent = '0 / ' + MASSNAHMEN.length;
+    document.getElementById('result-btn').style.display = 'none';
+    show('screen-game');
+}
+
+function restartGame() { startGame(); }
+
+function onCardClick(el) {
+    if (el.classList.contains('correct') || el.classList.contains('wrong')) return;
+    if (selectedCard === el) { el.classList.remove('selected'); selectedCard = null; return; }
+    if (selectedCard) selectedCard.classList.remove('selected');
+    selectedCard = el;
+    el.classList.add('selected');
+}
+
+function assignToCol(kat) {
+    if (!selectedCard) return;
+    const mId     = selectedCard.dataset.id;
+    const massn   = MASSNAHMEN.find(m => m.id === mId);
+    const correct = massn.kat === kat;
+
+    selectedCard.classList.remove('selected');
+    selectedCard.classList.add('in-col', correct ? 'correct' : 'wrong');
+
+    const label = document.createElement('div');
+    label.className = 'karte-result ' + (correct ? 'r-correct' : 'r-wrong');
+    label.textContent = correct
+        ? '✓ ' + KAT_INFO[kat].name
+        : '✗ Richtig: ' + KAT_INFO[massn.kat].name;
+    selectedCard.appendChild(label);
+
+    document.getElementById('cards-' + kat).appendChild(selectedCard);
+    placed[mId] = kat;
+    selectedCard = null;
+
+    if (correct) score++;
+    document.getElementById('score-badge').textContent = score + ' / ' + MASSNAHMEN.length;
+
+    if (Object.keys(placed).length === MASSNAHMEN.length) {
+        document.getElementById('result-btn').style.display = 'inline-block';
+    }
+}
+
+function showResult() {
+    const pct = Math.round((score / MASSNAHMEN.length) * 100);
+    document.getElementById('final-score').textContent = score + ' / ' + MASSNAHMEN.length;
+    document.getElementById('final-sub').textContent =
+        pct >= 80 ? '🌟 Ausgezeichnet!' : pct >= 50 ? '👍 Gut gemacht!' : '📚 Nochmal versuchen?';
+
+    document.getElementById('explanations').innerHTML = MASSNAHMEN.map(m => {
+        const playerKat = placed[m.id] || null;
+        const correct   = playerKat === m.kat;
+        return `<div class="exp-item ${correct ? 'correct' : 'wrong'}">
+            <div class="exp-szenario">${m.text}</div>
+            <div class="exp-meta">
+                ${correct
+                    ? `✅ Richtig: ${KAT_INFO[m.kat].icon} ${KAT_INFO[m.kat].name}`
+                    : `❌ Du: ${playerKat ? KAT_INFO[playerKat].icon + ' ' + KAT_INFO[playerKat].name : '–'}
+                       &nbsp;·&nbsp; Richtig: ${KAT_INFO[m.kat].icon} ${KAT_INFO[m.kat].name}`}
+            </div>
+            <div class="exp-norm">${m.norm}</div>
+            <div class="exp-erklaerung">${m.erklaerung}</div>
+        </div>`;
+    }).join('');
+
+    show('screen-result');
+}
+
+function shuffle(arr) { for (let i=arr.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[arr[i],arr[j]]=[arr[j],arr[i]];}return arr; }
+</script>
+</body>
+</html>
